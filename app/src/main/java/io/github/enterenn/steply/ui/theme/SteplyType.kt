@@ -1,6 +1,5 @@
 package io.github.enterenn.steply.ui.theme
 
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -43,15 +42,4 @@ val SteplyUiFont = FontFamily(
 
 val SteplyFiguresFont = FontFamily(
     VariableWeights.map { weight -> variableFont(R.font.darker_grotesque_variable, weight) },
-)
-
-@Immutable
-data class SteplyTypography(
-    val ui: FontFamily,
-    val figures: FontFamily,
-)
-
-fun steplyTypography(): SteplyTypography = SteplyTypography(
-    ui = SteplyUiFont,
-    figures = SteplyFiguresFont,
 )

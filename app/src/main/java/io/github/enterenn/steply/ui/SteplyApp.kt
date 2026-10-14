@@ -20,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.ui.menu.MenuScreen
@@ -70,9 +69,8 @@ private fun TabBar(selected: Tab, onSelect: (Tab) -> Unit, modifier: Modifier = 
             ) {
                 BasicText(
                     text = stringResource(tab.label),
-                    style = TextStyle(
+                    style = SteplyTheme.typography.body.copy(
                         color = if (isSelected) colors.accent else colors.text,
-                        fontFamily = SteplyTheme.typography.ui,
                     ),
                 )
             }

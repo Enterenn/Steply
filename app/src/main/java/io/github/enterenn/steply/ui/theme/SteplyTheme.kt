@@ -8,6 +8,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 
 private val LocalSteplyColors = staticCompositionLocalOf { steplyColors(AccentPreset.Blue, dark = false) }
 private val LocalSteplyTypography = staticCompositionLocalOf { steplyTypography() }
+private val LocalSteplySpacing = staticCompositionLocalOf { steplySpacing }
+private val LocalSteplyRadius = staticCompositionLocalOf { steplyRadius }
 
 object SteplyTheme {
     val colors: SteplyColors
@@ -19,6 +21,16 @@ object SteplyTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalSteplyTypography.current
+
+    val spacing: SteplySpacing
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalSteplySpacing.current
+
+    val radius: SteplyRadius
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalSteplyRadius.current
 }
 
 @Composable
@@ -30,6 +42,8 @@ fun SteplyTheme(
     CompositionLocalProvider(
         LocalSteplyColors provides steplyColors(accent, dark),
         LocalSteplyTypography provides steplyTypography(),
+        LocalSteplySpacing provides steplySpacing,
+        LocalSteplyRadius provides steplyRadius,
         content = content,
     )
 }
