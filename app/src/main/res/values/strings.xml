@@ -34,4 +34,26 @@
     <string name="gallery_button_destructive">Delete</string>
     <string name="gallery_switch_title">Switch</string>
     <string name="gallery_switch_label">Goal notifications</string>
+    <string name="steps_week_title">This week</string>
+    <string name="day_pill_label">%1$s %2$s</string>
+    <string name="day_mon_short">MON</string>
+    <string name="day_tue_short">TUE</string>
+    <string name="day_wed_short">WED</string>
+    <string name="day_thu_short">THU</string>
+    <string name="day_fri_short">FRI</string>
+    <string name="day_sat_short">SAT</string>
+    <string name="day_sun_short">SUN</string>
+    <string name="day_mon">Monday</string>
+    <string name="day_tue">Tuesday</string>
+    <string name="day_wed">Wednesday</string>
+    <string name="day_thu">Thursday</string>
+    <string name="day_fri">Friday</string>
+    <string name="day_sat">Saturday</string>
+    <string name="day_sun">Sunday</string>
+    <string name="gallery_stat_kcal_value">167</string>
+    <string name="gallery_stat_kcal_unit">kcal</string>
+    <string name="gallery_stat_kcal_caption">average calories burned per day</string>
+    <string name="gallery_stat_steps_value">3532</string>
+    <string name="gallery_stat_steps_unit">steps</string>
+    <string name="gallery_stat_steps_caption">average steps taken per day</string>
 </resources>
