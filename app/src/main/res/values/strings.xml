@@ -4,4 +4,17 @@
     <string name="tab_steps">Steps</string>
     <string name="tab_trends">Trends</string>
     <string name="tab_menu">Menu</string>
+    <string name="steps_counter_label">Phone step counter</string>
+    <string name="steps_counter_hint">Total since the phone last started, not since midnight.</string>
+    <string name="steps_read_time">Read at %1$s</string>
+    <string name="steps_delta">Since the previous reading: %1$s</string>
+    <string name="steps_delta_reset">Counter restarted. Steps on the new counter: %1$s</string>
+    <string name="steps_delta_none">No previous reading yet.</string>
+    <string name="steps_waiting">Reading the step counter…</string>
+    <string name="steps_sensor_missing">This phone has no step counter.</string>
+    <string name="steps_sensor_timeout">The step counter did not respond.</string>
+    <string name="steps_permission_title">Activity recognition</string>
+    <string name="steps_permission_body">Steply needs this to read the step counter, including while the phone stays in your pocket.</string>
+    <string name="steps_permission_allow">Allow</string>
+    <string name="steps_permission_settings">Open settings</string>
 </resources>
