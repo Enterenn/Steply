@@ -4,9 +4,10 @@ Sources (never overwritten):
   design/icon/steply-icon-background-1024.png
   design/icon/steply-icon-foreground-1024.png
 
-The background may include transparent padding; only its opaque square is scaled.
-The foreground is a white glyph on transparency and is also the monochrome layer
-(Android 13+ themed icons use that alpha mask).
+The background may include transparent padding; only its opaque square is scaled
+to the full 108 dp layer. The foreground already has its own margin, so the whole
+canvas is fitted into the center 72 dp that the launcher mask actually shows.
+That same bitmap is the monochrome layer (Android 13+ themed icons use its alpha).
 
 Requires Pillow. From the repo root:
 
@@ -62,7 +63,6 @@ def load_background(path: Path) -> Image.Image:
 
 
 def load_foreground(path: Path) -> Image.Image:
-    """Keep the transparent margin: it places the glyph inside the adaptive safe zone."""
     image = Image.open(path).convert("RGBA")
     width, height = image.size
     if width != height:
@@ -81,11 +81,24 @@ def write_layers(name: str, image: Image.Image) -> None:
         )
 
 
+def write_foreground(image: Image.Image) -> None:
+    # 18 dp is masked away on each side of the 108 dp layer.
+    for density, size in DENSITIES.items():
+        inner = size * 72 // 108
+        inset = (size - inner) // 2
+        canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        scaled = image.resize((inner, inner), Image.Resampling.LANCZOS)
+        canvas.paste(scaled, (inset, inset), scaled)
+        folder = RES / f"mipmap-{density}"
+        folder.mkdir(parents=True, exist_ok=True)
+        canvas.save(folder / "ic_launcher_foreground.png", format="PNG", optimize=True)
+
+
 def main() -> None:
     background = load_background(BACKGROUND_SRC)
     foreground = load_foreground(FOREGROUND_SRC)
     write_layers("ic_launcher_background", background)
-    write_layers("ic_launcher_foreground", foreground)
+    write_foreground(foreground)
 
     anydpi = RES / "mipmap-anydpi-v26"
     anydpi.mkdir(parents=True, exist_ok=True)
