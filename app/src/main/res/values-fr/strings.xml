@@ -4,4 +4,17 @@
     <string name="tab_steps">Pas</string>
     <string name="tab_trends">Tendances</string>
     <string name="tab_menu">Menu</string>
+    <string name="steps_counter_label">Compteur du téléphone</string>
+    <string name="steps_counter_hint">Total depuis le dernier démarrage du téléphone, pas depuis minuit.</string>
+    <string name="steps_read_time">Lu à %1$s</string>
+    <string name="steps_delta">Depuis le relevé précédent : %1$s</string>
+    <string name="steps_delta_reset">Compteur remis à zéro. Pas sur le nouveau compteur : %1$s</string>
+    <string name="steps_delta_none">Pas encore de relevé précédent.</string>
+    <string name="steps_waiting">Lecture du compteur…</string>
+    <string name="steps_sensor_missing">Ce téléphone n\'a pas de compteur de pas.</string>
+    <string name="steps_sensor_timeout">Le compteur de pas n\'a pas répondu.</string>
+    <string name="steps_permission_title">Reconnaissance d\'activité</string>
+    <string name="steps_permission_body">Steply en a besoin pour lire le compteur de pas, y compris quand le téléphone reste dans la poche.</string>
+    <string name="steps_permission_allow">Autoriser</string>
+    <string name="steps_permission_settings">Ouvrir les réglages</string>
 </resources>

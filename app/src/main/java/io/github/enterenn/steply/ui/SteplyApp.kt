@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.enterenn.steply.R
+import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.ui.menu.MenuScreen
 import io.github.enterenn.steply.ui.steps.StepsScreen
 import io.github.enterenn.steply.ui.theme.SteplyTheme
@@ -34,14 +35,14 @@ private enum class Tab(@StringRes val label: Int) {
 }
 
 @Composable
-fun SteplyApp() {
+fun SteplyApp(container: AppContainer) {
     var selected by rememberSaveable { mutableStateOf(Tab.Steps) }
     val colors = SteplyTheme.colors
 
     Box(Modifier.fillMaxSize().background(colors.background).statusBarsPadding()) {
         Box(Modifier.fillMaxSize()) {
             when (selected) {
-                Tab.Steps -> StepsScreen()
+                Tab.Steps -> StepsScreen(container)
                 Tab.Trends -> TrendsScreen()
                 Tab.Menu -> MenuScreen()
             }
