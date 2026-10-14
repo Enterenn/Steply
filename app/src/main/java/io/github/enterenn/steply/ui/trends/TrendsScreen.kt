@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.ui.semantics.semantics
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.ui.components.SteplyCard
 import io.github.enterenn.steply.ui.components.SteplyListRow
+import io.github.enterenn.steply.ui.components.SteplyStatTile
 import io.github.enterenn.steply.ui.components.SteplyPillButton
 import io.github.enterenn.steply.ui.components.SteplyPillButtonStyle
 import io.github.enterenn.steply.ui.components.SteplySegmentedControl
@@ -48,6 +50,25 @@ fun TrendsScreen() {
             .padding(spacing.screen),
         verticalArrangement = Arrangement.spacedBy(spacing.stack),
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(spacing.stack),
+        ) {
+            SteplyStatTile(
+                glyph = FireGlyph,
+                value = stringResource(R.string.gallery_stat_kcal_value),
+                unit = stringResource(R.string.gallery_stat_kcal_unit),
+                caption = stringResource(R.string.gallery_stat_kcal_caption),
+                modifier = Modifier.weight(1f),
+            )
+            SteplyStatTile(
+                glyph = FootprintsGlyph,
+                value = stringResource(R.string.gallery_stat_steps_value),
+                unit = stringResource(R.string.gallery_stat_steps_unit),
+                caption = stringResource(R.string.gallery_stat_steps_caption),
+                modifier = Modifier.weight(1f),
+            )
+        }
         GallerySection(R.string.gallery_card_title) {
             SteplyCard {
                 BasicText(
@@ -119,3 +140,6 @@ private fun GallerySection(
         content()
     }
 }
+
+private const val FireGlyph = "\uE242"
+private const val FootprintsGlyph = "\uEA88"

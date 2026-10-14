@@ -34,4 +34,26 @@
     <string name="gallery_button_destructive">Supprimer</string>
     <string name="gallery_switch_title">Interrupteur</string>
     <string name="gallery_switch_label">Notifications d\'objectif</string>
+    <string name="steps_week_title">Cette semaine</string>
+    <string name="day_pill_label">%1$s %2$s</string>
+    <string name="day_mon_short">LUN</string>
+    <string name="day_tue_short">MAR</string>
+    <string name="day_wed_short">MER</string>
+    <string name="day_thu_short">JEU</string>
+    <string name="day_fri_short">VEN</string>
+    <string name="day_sat_short">SAM</string>
+    <string name="day_sun_short">DIM</string>
+    <string name="day_mon">Lundi</string>
+    <string name="day_tue">Mardi</string>
+    <string name="day_wed">Mercredi</string>
+    <string name="day_thu">Jeudi</string>
+    <string name="day_fri">Vendredi</string>
+    <string name="day_sat">Samedi</string>
+    <string name="day_sun">Dimanche</string>
+    <string name="gallery_stat_kcal_value">167</string>
+    <string name="gallery_stat_kcal_unit">kcal</string>
+    <string name="gallery_stat_kcal_caption">calories moyennes brûlées par jour</string>
+    <string name="gallery_stat_steps_value">3532</string>
+    <string name="gallery_stat_steps_unit">pas</string>
+    <string name="gallery_stat_steps_caption">pas moyens par jour</string>
 </resources>
