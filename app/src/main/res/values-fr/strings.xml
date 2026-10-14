@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Steply</string>
+    <string name="tab_steps">Pas</string>
+    <string name="tab_trends">Tendances</string>
+    <string name="tab_menu">Menu</string>
+</resources>
