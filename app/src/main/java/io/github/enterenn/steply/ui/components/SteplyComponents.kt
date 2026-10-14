@@ -50,6 +50,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.github.enterenn.steply.ui.theme.SteplyTheme
@@ -262,6 +263,7 @@ fun SteplyPillButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     style: SteplyPillButtonStyle = SteplyPillButtonStyle.Primary,
+    verticalPadding: Dp = 0.dp,
 ) {
     val colors = SteplyTheme.colors
     val background = when (style) {
@@ -275,27 +277,61 @@ fun SteplyPillButton(
         SteplyPillButtonStyle.DestructiveText -> colors.error
     }
     val interaction = remember { MutableInteractionSource() }
-    Box(
-        modifier
-            .pressBounce()
-            .widthIn(min = TouchTarget)
-            .heightIn(min = TouchTarget)
-            .clip(RoundedCornerShape(SteplyTheme.radius.button))
-            .then(if (background != null) Modifier.background(background) else Modifier)
-            .clickable(
-                interactionSource = interaction,
-                indication = null,
-                role = Role.Button,
-                onClick = onClick,
+    val shape = RoundedCornerShape(SteplyTheme.radius.button)
+    if (verticalPadding > 0.dp) {
+        Box(
+            modifier
+                .pressBounce()
+                .widthIn(min = TouchTarget)
+                .heightIn(min = TouchTarget)
+                .clickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onClick,
+                )
+                .semantics(mergeDescendants = true) {},
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                Modifier
+                    .clip(shape)
+                    .then(if (background != null) Modifier.background(background) else Modifier)
+                    .padding(
+                        horizontal = SteplyTheme.spacing.card,
+                        vertical = verticalPadding,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                BasicText(
+                    text = label,
+                    style = SteplyTheme.typography.body.copy(color = contentColor),
+                )
+            }
+        }
+    } else {
+        Box(
+            modifier
+                .pressBounce()
+                .widthIn(min = TouchTarget)
+                .heightIn(min = TouchTarget)
+                .clip(shape)
+                .then(if (background != null) Modifier.background(background) else Modifier)
+                .clickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onClick,
+                )
+                .semantics(mergeDescendants = true) {}
+                .padding(horizontal = SteplyTheme.spacing.card),
+            contentAlignment = Alignment.Center,
+        ) {
+            BasicText(
+                text = label,
+                style = SteplyTheme.typography.body.copy(color = contentColor),
             )
-            .semantics(mergeDescendants = true) {}
-            .padding(horizontal = SteplyTheme.spacing.card),
-        contentAlignment = Alignment.Center,
-    ) {
-        BasicText(
-            text = label,
-            style = SteplyTheme.typography.body.copy(color = contentColor),
-        )
+        }
     }
 }
 

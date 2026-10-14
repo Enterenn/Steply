@@ -10,6 +10,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -38,26 +40,17 @@ import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.ui.components.SteplyCard
 import io.github.enterenn.steply.ui.components.SteplyDayPill
 import io.github.enterenn.steply.ui.components.SteplyPillButton
+import io.github.enterenn.steply.ui.components.SteplyProgressRing
 import io.github.enterenn.steply.ui.components.SteplyPillButtonStyle
-import io.github.enterenn.steply.data.steps.StepCounterSnapshot
-import io.github.enterenn.steply.data.steps.StepReadStatus
 import io.github.enterenn.steply.ui.theme.SteplyTheme
-import java.text.NumberFormat
 import java.time.DayOfWeek
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.time.temporal.TemporalAdjusters
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
-import java.time.format.FormatStyle
-import java.util.Locale
 
 @Composable
 fun StepsScreen(container: AppContainer) {
     val context = LocalContext.current
     val granted by container.activityRecognitionGranted.collectAsState()
-    val readings by container.stepReadings.collectAsState()
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { _ ->
@@ -90,15 +83,11 @@ fun StepsScreen(container: AppContainer) {
             selectedIndex = selectedDay,
             onSelect = { selectedDay = it },
         )
+        StepsProgressCard()
         if (!granted) {
             PermissionDeniedContent(
                 onAllow = { permissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION) },
                 onOpenSettings = { openAppSettings(context) },
-            )
-        } else {
-            ReadingContent(
-                snapshot = readings.snapshot,
-                status = readings.status,
             )
         }
     }
@@ -144,64 +133,29 @@ private fun WeekDayCard(
 }
 
 @Composable
-private fun ReadingContent(snapshot: StepCounterSnapshot?, status: StepReadStatus) {
-    val colors = SteplyTheme.colors
-    val spacing = SteplyTheme.spacing
-    val numberFormat = remember { NumberFormat.getIntegerInstance() }
-    Column(verticalArrangement = Arrangement.spacedBy(spacing.stack)) {
-        BasicText(
-            text = stringResource(R.string.steps_counter_label),
-            style = SteplyTheme.typography.caption.copy(color = colors.gray),
+private fun StepsProgressCard() {
+    SteplyCard {
+        SteplyProgressRing(
+            label = stringResource(R.string.steps_ring_label),
+            valueText = stringResource(R.string.steps_ring_value),
+            goalText = stringResource(R.string.steps_ring_goal),
+            value = ExampleRingSteps,
+            goal = ExampleRingGoal,
+            contentDescription = stringResource(R.string.steps_ring_a11y),
         )
-        BasicText(
-            text = snapshot?.let { numberFormat.format(it.cumulativeSteps) }
-                ?: stringResource(R.string.steps_waiting),
-            style = if (snapshot == null) {
-                SteplyTheme.typography.body.copy(color = colors.text)
-            } else {
-                SteplyTheme.typography.display.copy(color = colors.text)
-            },
-        )
-        if (snapshot != null) {
-            BasicText(
-                text = stringResource(
-                    R.string.steps_read_time,
-                    formatRecordedAt(snapshot.recordedAt, snapshot.zoneOffset),
-                ),
-                style = SteplyTheme.typography.body.copy(color = colors.text),
-            )
-            BasicText(
-                text = deltaLabel(snapshot, numberFormat),
-                style = SteplyTheme.typography.body.copy(color = colors.text),
+        Box(
+            Modifier
+                .padding(top = SteplyTheme.spacing.stack)
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            SteplyPillButton(
+                label = stringResource(R.string.steps_set_goal),
+                onClick = {},
+                style = SteplyPillButtonStyle.Secondary,
+                verticalPadding = SetGoalButtonPadding,
             )
         }
-        BasicText(
-            text = stringResource(R.string.steps_counter_hint),
-            style = SteplyTheme.typography.caption.copy(color = colors.gray),
-        )
-        if (status != StepReadStatus.Idle) {
-            BasicText(
-                text = stringResource(
-                    if (status == StepReadStatus.SensorMissing) {
-                        R.string.steps_sensor_missing
-                    } else {
-                        R.string.steps_sensor_timeout
-                    },
-                ),
-                style = SteplyTheme.typography.caption.copy(color = colors.error),
-            )
-        }
-    }
-}
-
-@Composable
-private fun deltaLabel(snapshot: StepCounterSnapshot, numberFormat: NumberFormat): String {
-    val steps = snapshot.deltaSteps ?: return stringResource(R.string.steps_delta_none)
-    val formatted = numberFormat.format(steps)
-    return if (snapshot.counterReset) {
-        stringResource(R.string.steps_delta_reset, formatted)
-    } else {
-        stringResource(R.string.steps_delta, formatted)
     }
 }
 
@@ -267,6 +221,11 @@ private fun dayLabels(day: DayOfWeek): Pair<Int, Int> = when (day) {
     DayOfWeek.SUNDAY -> R.string.day_sun_short to R.string.day_sun
 }
 
+private val SetGoalButtonPadding = 8.dp
+
+private const val ExampleRingSteps = 3750
+private const val ExampleRingGoal = 10000
+
 private val WeekOrder = listOf(
     DayOfWeek.MONDAY,
     DayOfWeek.TUESDAY,
@@ -276,16 +235,3 @@ private val WeekOrder = listOf(
     DayOfWeek.SATURDAY,
     DayOfWeek.SUNDAY,
 )
-
-private fun formatRecordedAt(recordedAt: String, zoneOffset: String): String {
-    return try {
-        val local = Instant.parse(recordedAt).atOffset(ZoneOffset.of(zoneOffset))
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-            .withLocale(Locale.getDefault())
-            .format(local)
-    } catch (_: DateTimeParseException) {
-        recordedAt
-    } catch (_: java.time.DateTimeException) {
-        recordedAt
-    }
-}

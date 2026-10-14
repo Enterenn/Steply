@@ -24,6 +24,8 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.ui.components.SteplyCard
+import io.github.enterenn.steply.ui.components.SteplyChartTick
+import io.github.enterenn.steply.ui.components.SteplyHistogram
 import io.github.enterenn.steply.ui.components.SteplyListRow
 import io.github.enterenn.steply.ui.components.SteplyStatTile
 import io.github.enterenn.steply.ui.components.SteplyPillButton
@@ -50,6 +52,28 @@ fun TrendsScreen() {
             .padding(spacing.screen),
         verticalArrangement = Arrangement.spacedBy(spacing.stack),
     ) {
+        SteplyCard {
+            SteplyHistogram(
+                values = ExampleWeekSteps,
+                maxValue = ExampleChartMax,
+                goalValue = ExampleChartGoal,
+                ticks = listOf(
+                    SteplyChartTick(ExampleChartMax, stringResource(R.string.chart_axis_max)),
+                    SteplyChartTick(ExampleChartGoal, stringResource(R.string.chart_axis_goal)),
+                    SteplyChartTick(0, stringResource(R.string.chart_axis_zero)),
+                ),
+                dayLabels = listOf(
+                    stringResource(R.string.chart_fri),
+                    stringResource(R.string.chart_sat),
+                    stringResource(R.string.chart_sun),
+                    stringResource(R.string.chart_mon),
+                    stringResource(R.string.chart_tue),
+                    stringResource(R.string.chart_wed),
+                    stringResource(R.string.chart_thu),
+                ),
+                contentDescription = stringResource(R.string.trends_chart_a11y),
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(spacing.stack),
@@ -140,6 +164,10 @@ private fun GallerySection(
         content()
     }
 }
+
+private val ExampleWeekSteps = listOf(0, 0, 0, 0, 1600, 2200, 1200)
+private const val ExampleChartMax = 2700
+private const val ExampleChartGoal = 2000
 
 private const val FireGlyph = "\uE242"
 private const val FootprintsGlyph = "\uEA88"
