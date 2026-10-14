@@ -70,7 +70,10 @@ private fun TabBar(selected: Tab, onSelect: (Tab) -> Unit, modifier: Modifier = 
             ) {
                 BasicText(
                     text = stringResource(tab.label),
-                    style = TextStyle(color = if (isSelected) colors.accent else colors.text),
+                    style = TextStyle(
+                        color = if (isSelected) colors.accent else colors.text,
+                        fontFamily = SteplyTheme.typography.ui,
+                    ),
                 )
             }
         }

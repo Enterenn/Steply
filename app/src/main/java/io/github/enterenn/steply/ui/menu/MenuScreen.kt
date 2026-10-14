@@ -14,6 +14,9 @@ import io.github.enterenn.steply.ui.theme.SteplyTheme
 @Composable
 fun MenuScreen() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        BasicText(stringResource(R.string.tab_menu), style = TextStyle(color = SteplyTheme.colors.text))
+        BasicText(
+            stringResource(R.string.tab_menu),
+            style = TextStyle(color = SteplyTheme.colors.text, fontFamily = SteplyTheme.typography.ui),
+        )
     }
 }
