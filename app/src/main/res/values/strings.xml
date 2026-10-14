@@ -4,15 +4,6 @@
     <string name="tab_steps">Steps</string>
     <string name="tab_trends">Trends</string>
     <string name="tab_menu">Menu</string>
-    <string name="steps_counter_label">Phone step counter</string>
-    <string name="steps_counter_hint">Total since the phone last started, not since midnight.</string>
-    <string name="steps_read_time">Read at %1$s</string>
-    <string name="steps_delta">Since the previous reading: %1$s</string>
-    <string name="steps_delta_reset">Counter restarted. Steps on the new counter: %1$s</string>
-    <string name="steps_delta_none">No previous reading yet.</string>
-    <string name="steps_waiting">Reading the step counter…</string>
-    <string name="steps_sensor_missing">This phone has no step counter.</string>
-    <string name="steps_sensor_timeout">The step counter did not respond.</string>
     <string name="steps_permission_title">Activity recognition</string>
     <string name="steps_permission_body">Steply needs this to read the step counter, including while the phone stays in your pocket.</string>
     <string name="steps_permission_allow">Allow</string>
@@ -56,4 +47,20 @@
     <string name="gallery_stat_steps_value">3532</string>
     <string name="gallery_stat_steps_unit">steps</string>
     <string name="gallery_stat_steps_caption">average steps taken per day</string>
+    <string name="steps_ring_label">Steps</string>
+    <string name="steps_ring_value">3 750</string>
+    <string name="steps_ring_goal">/10 000</string>
+    <string name="steps_ring_a11y">Steps, 3 750 of 10 000</string>
+    <string name="steps_set_goal">Set goal</string>
+    <string name="trends_chart_a11y">Steps over 7 days. Goal 2 000. Friday 0, Saturday 0, Sunday 0, Monday 0, Tuesday 1 600, Wednesday 2 200, Thursday 1 200.</string>
+    <string name="chart_axis_max">2.7k</string>
+    <string name="chart_axis_goal">2k</string>
+    <string name="chart_axis_zero">0</string>
+    <string name="chart_fri">Fri</string>
+    <string name="chart_sat">Sat</string>
+    <string name="chart_sun">Sun</string>
+    <string name="chart_mon">Mon</string>
+    <string name="chart_tue">Tue</string>
+    <string name="chart_wed">Wed</string>
+    <string name="chart_thu">Thu</string>
 </resources>
