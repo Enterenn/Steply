@@ -17,4 +17,21 @@
     <string name="steps_permission_body">Steply en a besoin pour lire le compteur de pas, y compris quand le téléphone reste dans la poche.</string>
     <string name="steps_permission_allow">Autoriser</string>
     <string name="steps_permission_settings">Ouvrir les réglages</string>
+    <string name="gallery_card_title">Carte</string>
+    <string name="gallery_card_body">Une surface qui regroupe du contenu.</string>
+    <string name="gallery_list_title">Liste groupée</string>
+    <string name="gallery_list_profile">Profil</string>
+    <string name="gallery_list_data">Données</string>
+    <string name="gallery_list_data_value">Sur l\'appareil</string>
+    <string name="gallery_list_about">À propos</string>
+    <string name="gallery_segment_title">Contrôle segmenté</string>
+    <string name="gallery_segment_day">Jour</string>
+    <string name="gallery_segment_week">Semaine</string>
+    <string name="gallery_segment_month">Mois</string>
+    <string name="gallery_button_title">Bouton pilule</string>
+    <string name="gallery_button_primary">Primaire</string>
+    <string name="gallery_button_secondary">Secondaire</string>
+    <string name="gallery_button_destructive">Supprimer</string>
+    <string name="gallery_switch_title">Interrupteur</string>
+    <string name="gallery_switch_label">Notifications d\'objectif</string>
 </resources>

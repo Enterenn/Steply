@@ -8,18 +8,11 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,15 +20,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
+import io.github.enterenn.steply.ui.components.SteplyPillButton
+import io.github.enterenn.steply.ui.components.SteplyPillButtonStyle
 import io.github.enterenn.steply.data.steps.StepCounterSnapshot
 import io.github.enterenn.steply.data.steps.StepReadStatus
 import io.github.enterenn.steply.ui.theme.SteplyTheme
@@ -91,9 +82,7 @@ private fun ReadingContent(snapshot: StepCounterSnapshot?, status: StepReadStatu
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = spacing.screen, vertical = spacing.screen)
-            .padding(bottom = 48.dp + spacing.stack)
-            .navigationBarsPadding(),
+            .padding(spacing.screen),
         verticalArrangement = Arrangement.spacedBy(spacing.stack),
     ) {
         BasicText(
@@ -159,9 +148,7 @@ private fun PermissionDeniedContent(onAllow: () -> Unit, onOpenSettings: () -> U
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = spacing.screen, vertical = spacing.screen)
-            .padding(bottom = 48.dp + spacing.stack)
-            .navigationBarsPadding(),
+            .padding(spacing.screen),
         verticalArrangement = Arrangement.spacedBy(spacing.stack, Alignment.CenterVertically),
     ) {
         BasicText(
@@ -172,43 +159,17 @@ private fun PermissionDeniedContent(onAllow: () -> Unit, onOpenSettings: () -> U
             text = stringResource(R.string.steps_permission_body),
             style = SteplyTheme.typography.body.copy(color = colors.text),
         )
-        SteplyButton(
+        SteplyPillButton(
             label = stringResource(R.string.steps_permission_allow),
-            containerColor = colors.accentFill,
-            contentColor = colors.onAccentFill,
             onClick = onAllow,
+            modifier = Modifier.fillMaxWidth(),
         )
-        SteplyButton(
+        SteplyPillButton(
             label = stringResource(R.string.steps_permission_settings),
-            containerColor = colors.lightGray,
-            contentColor = colors.text,
             onClick = onOpenSettings,
+            modifier = Modifier.fillMaxWidth(),
+            style = SteplyPillButtonStyle.Secondary,
         )
-    }
-}
-
-@Composable
-private fun SteplyButton(
-    label: String,
-    containerColor: Color,
-    contentColor: Color,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(SteplyTheme.radius.button))
-            .background(containerColor)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Button,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        BasicText(text = label, style = SteplyTheme.typography.body.copy(color = contentColor))
     }
 }
 
