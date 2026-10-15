@@ -26,4 +26,9 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         container.onAppForeground()
     }
+
+    override fun onPause() {
+        container.onAppBackground()
+        super.onPause()
+    }
 }

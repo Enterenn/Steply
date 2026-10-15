@@ -1,7 +1,12 @@
 package io.github.enterenn.steply.ui.components
 
+import android.provider.Settings
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +20,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -22,13 +34,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
@@ -94,7 +110,7 @@ fun SteplyProgressRing(
     val colors = SteplyTheme.colors
     val spacing = SteplyTheme.spacing
     val spokenLabel = contentDescription
-    val fraction = if (goal <= 0) 0f else (value.toFloat() / goal.toFloat()).coerceIn(0f, 1f)
+    val stepMotion = rememberStepMotion(value, valueText, goal)
     BoxWithConstraints(
         modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center,
@@ -115,31 +131,7 @@ fun SteplyProgressRing(
                     }
                 },
         ) {
-            Canvas(Modifier.matchParentSize()) {
-                val stroke = RingStroke.toPx()
-                val center = Offset(size.width / 2f, size.height / 2f)
-                val radius = (size.minDimension - stroke) / 2f
-                if (radius <= 0f) return@Canvas
-                val outer = radius + stroke / 2f
-                val inner = radius - stroke / 2f
-                val track = Path().apply {
-                    fillType = PathFillType.EvenOdd
-                    addOval(Rect(center, outer))
-                    addOval(Rect(center, inner))
-                }
-                drawPath(track, colors.lightGray)
-                if (fraction > 0f) {
-                    drawArc(
-                        color = colors.accent,
-                        startAngle = RingStartAngle,
-                        sweepAngle = RingFullSweep * fraction,
-                        useCenter = false,
-                        topLeft = Offset(center.x - radius, center.y - radius),
-                        size = Size(radius * 2f, radius * 2f),
-                        style = Stroke(width = stroke, cap = StrokeCap.Round),
-                    )
-                }
-            }
+            RingArc(stepMotion, colors.lightGray, colors.accent)
             ScaleDown(
                 Modifier
                     .fillMaxSize()
@@ -169,17 +161,17 @@ fun SteplyProgressRing(
                             softWrap = false,
                         )
                     }
-                    BasicText(
-                        text = valueText,
-                        style = SteplyTheme.typography.display.copy(
-                            color = colors.text,
-                            fontSize = RingValueSize,
-                            lineHeight = RingValueLineHeight,
-                            fontWeight = FontWeight.Black,
-                            textAlign = TextAlign.Center,
-                        ),
-                        maxLines = 1,
-                        softWrap = false,
+                    val valueStyle = SteplyTheme.typography.display.copy(
+                        color = colors.text,
+                        fontSize = RingValueSize,
+                        lineHeight = RingValueLineHeight,
+                        fontWeight = FontWeight.Black,
+                        textAlign = TextAlign.Center,
+                    )
+                    StepCountLabel(
+                        motion = stepMotion,
+                        current = valueText,
+                        style = valueStyle,
                     )
                     BasicText(
                         text = goalText,
@@ -198,6 +190,185 @@ fun SteplyProgressRing(
         }
     }
 }
+
+@Composable
+private fun rememberStepMotion(value: Int, text: String, goal: Int): StepMotion {
+    val motionEnabled = motionEnabled()
+    val state = remember {
+        StepMotion(targetFraction(value, goal)).also {
+            it.settledValue = value
+            it.settledText = text
+        }
+    }
+    LaunchedEffect(value, text, goal, motionEnabled) {
+        val target = targetFraction(value, goal)
+        val delta = value - state.settledValue
+        val tick = motionEnabled && delta in 1..MicroTickMaxDelta && text != state.settledText
+        if (!tick) {
+            state.ticking = false
+            state.fraction = target
+            state.settledValue = value
+            state.settledText = text
+            return@LaunchedEffect
+        }
+        state.fromText = state.settledText
+        state.fromFraction = state.displayedFraction()
+        state.targetFraction = target
+        state.settledValue = value
+        state.settledText = text
+        state.ticking = true
+        state.tick = 0f
+        Animatable(0f).animateTo(1f, tween(MicroTickMs, easing = MicroTickEasing)) {
+            state.tick = this.value
+        }
+        state.fraction = target
+        state.ticking = false
+        state.tick = 1f
+    }
+    return state
+}
+
+@Composable
+private fun BoxScope.RingArc(motion: StepMotion, trackColor: Color, arcColor: Color) {
+    val fraction = motion.displayedFraction()
+    Canvas(Modifier.matchParentSize()) {
+        val stroke = RingStroke.toPx()
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val radius = (size.minDimension - stroke) / 2f
+        if (radius <= 0f) return@Canvas
+        val outer = radius + stroke / 2f
+        val inner = radius - stroke / 2f
+        val track = Path().apply {
+            fillType = PathFillType.EvenOdd
+            addOval(Rect(center, outer))
+            addOval(Rect(center, inner))
+        }
+        drawPath(track, trackColor)
+        if (fraction > 0f) {
+            drawArc(
+                color = arcColor,
+                startAngle = RingStartAngle,
+                sweepAngle = RingFullSweep * fraction,
+                useCenter = false,
+                topLeft = Offset(center.x - radius, center.y - radius),
+                size = Size(radius * 2f, radius * 2f),
+                style = Stroke(width = stroke, cap = StrokeCap.Round),
+            )
+        }
+    }
+}
+
+@Composable
+private fun StepCountLabel(motion: StepMotion, current: String, style: TextStyle) {
+    if (motion.ticking) {
+        TickStepCount(current = current, previous = motion.fromText, motion = motion, style = style)
+    } else {
+        BasicText(text = motion.settledText, style = style, maxLines = 1, softWrap = false)
+    }
+}
+
+@Composable
+private fun TickStepCount(
+    current: String,
+    previous: String,
+    motion: StepMotion,
+    style: TextStyle,
+) {
+    val count = maxOf(current.length, previous.length)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        repeat(count) { index ->
+            TickDigit(
+                current = current.segmentAt(index),
+                previous = previous.segmentAt(index),
+                motion = motion,
+                style = style,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TickDigit(
+    current: String,
+    previous: String,
+    motion: StepMotion,
+    style: TextStyle,
+) {
+    if (current == previous || current.isEmpty()) {
+        BasicText(text = current, style = style, maxLines = 1, softWrap = false)
+        return
+    }
+    val eased = motion.tick.coerceIn(0f, 1f)
+    val slide = MicroTickSlide * (1f - eased)
+    val density = LocalDensity.current
+    val cellHeight = with(density) { style.lineHeight.toDp() }
+    Box(
+        Modifier
+            .height(cellHeight)
+            .clipToBounds(),
+        contentAlignment = Alignment.Center,
+    ) {
+        BasicText(
+            text = previous,
+            modifier = Modifier.graphicsLayer {
+                translationY = -slide.toPx()
+                alpha = 1f - eased
+            },
+            style = style,
+            maxLines = 1,
+            softWrap = false,
+        )
+        BasicText(
+            text = current,
+            modifier = Modifier.graphicsLayer {
+                translationY = slide.toPx()
+                alpha = eased
+            },
+            style = style,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
+}
+
+@Composable
+private fun motionEnabled(): Boolean {
+    val context = LocalContext.current
+    val scale = Settings.Global.getFloat(
+        context.contentResolver,
+        Settings.Global.ANIMATOR_DURATION_SCALE,
+        1f,
+    )
+    return scale > 0f
+}
+
+private fun targetFraction(value: Int, goal: Int): Float {
+    if (goal <= 0) return 0f
+    return (value.toFloat() / goal.toFloat()).coerceIn(0f, 1f)
+}
+
+private fun String.segmentAt(index: Int): String =
+    if (index < length) this[index].toString() else ""
+
+private class StepMotion(fraction: Float) {
+    var fraction by mutableFloatStateOf(fraction)
+    var fromFraction by mutableFloatStateOf(fraction)
+    var targetFraction by mutableFloatStateOf(fraction)
+    var settledValue by mutableIntStateOf(0)
+    var settledText by mutableStateOf("")
+    var fromText by mutableStateOf("")
+    var tick by mutableFloatStateOf(1f)
+    var ticking by mutableStateOf(false)
+
+    fun displayedFraction(): Float {
+        return if (ticking) fromFraction + (targetFraction - fromFraction) * tick else fraction
+    }
+}
+
+private const val MicroTickMaxDelta = 15
+private const val MicroTickMs = 150
+private val MicroTickSlide = 5.dp
+private val MicroTickEasing = CubicBezierEasing(0f, 0f, 0.2f, 1f)
 
 @Composable
 fun SteplyHistogram(

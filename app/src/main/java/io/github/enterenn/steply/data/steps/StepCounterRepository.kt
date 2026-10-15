@@ -3,14 +3,19 @@ package io.github.enterenn.steply.data.steps
 import io.github.enterenn.steply.data.db.StepCounterReadingDao
 import io.github.enterenn.steply.data.db.StepCounterReadingEntity
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 data class StepCounterSnapshot(
     val cumulativeSteps: Long,
@@ -36,29 +41,80 @@ class StepCounterRepository(
     private val reader: StepCounterReader,
 ) {
     private val gate = Mutex()
+    private val cacheLock = Mutex()
+    private val cachedReadings = mutableListOf<StepReading>()
+    private var cacheLoaded = false
     private val _state = MutableStateFlow(StepReadingsState())
     val state: StateFlow<StepReadingsState> = _state.asStateFlow()
+    private var lastLiveCumulative: Long? = null
+
+    fun startLiveUpdates(scope: CoroutineScope) {
+        lastLiveCumulative = null
+        reader.startListening { cumulative ->
+            if (cumulative == lastLiveCumulative) return@startListening
+            lastLiveCumulative = cumulative
+            scope.launch { recordCumulative(cumulative) }
+        }
+    }
+
+    fun stopLiveUpdates() {
+        lastLiveCumulative = null
+        reader.stopListening()
+    }
 
     suspend fun refreshFromDatabase() = gate.withLock {
         publishLatest()
     }
 
+    suspend fun stepsOn(day: LocalDate, zone: ZoneId = ZoneId.systemDefault()): Long {
+        val readings = readingsSnapshot()
+        return withContext(Dispatchers.Default) { daySteps(readings, day, zone) }
+    }
+
+    suspend fun recordCumulative(cumulativeSteps: Long) = gate.withLock {
+        writeCumulative(cumulativeSteps)
+    }
+
     suspend fun recordReading() = gate.withLock {
         when (val read = reader.read()) {
-            is StepCounterRead.Value -> {
-                val now = Instant.now()
-                dao.insert(
-                    StepCounterReadingEntity(
-                        cumulativeSteps = read.cumulativeSteps,
-                        recordedAt = now.toString(),
-                        zoneOffset = ZoneId.systemDefault().rules.getOffset(now).toStoredOffset(),
-                    ),
-                )
-                publishLatest()
-            }
+            is StepCounterRead.Value -> writeCumulative(read.cumulativeSteps)
             StepCounterRead.Unavailable -> _state.update { it.copy(status = StepReadStatus.SensorMissing) }
             StepCounterRead.TimedOut -> _state.update { it.copy(status = StepReadStatus.TimedOut) }
         }
+    }
+
+    private suspend fun writeCumulative(cumulativeSteps: Long) {
+        val latest = dao.latestTwo().firstOrNull()
+        if (latest?.cumulativeSteps == cumulativeSteps) return
+        val now = Instant.now()
+        val recordedAt = now.toString()
+        dao.insert(
+            StepCounterReadingEntity(
+                cumulativeSteps = cumulativeSteps,
+                recordedAt = recordedAt,
+                zoneOffset = ZoneId.systemDefault().rules.getOffset(now).toStoredOffset(),
+            ),
+        )
+        rememberReading(StepReading(cumulativeSteps, now))
+        publishLatest()
+    }
+
+    private suspend fun readingsSnapshot(): List<StepReading> = cacheLock.withLock {
+        if (!cacheLoaded) {
+            cachedReadings.clear()
+            cachedReadings += dao.allById().map { reading ->
+                StepReading(reading.cumulativeSteps, Instant.parse(reading.recordedAt))
+            }
+            cacheLoaded = true
+        }
+        cachedReadings.toList()
+    }
+
+    private suspend fun rememberReading(reading: StepReading) = cacheLock.withLock {
+        if (!cacheLoaded) return@withLock
+        val last = cachedReadings.lastOrNull()
+        if (last?.cumulativeSteps == reading.cumulativeSteps && last.recordedAt == reading.recordedAt) return@withLock
+        cachedReadings.add(reading)
     }
 
     private suspend fun publishLatest() {

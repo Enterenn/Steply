@@ -51,8 +51,16 @@ class AppContainer(context: Context) {
     fun onAppForeground() {
         val granted = appContext.hasActivityRecognitionPermission()
         _activityRecognitionGranted.value = granted
-        if (!granted) return
+        if (!granted) {
+            stepCounterRepository.stopLiveUpdates()
+            return
+        }
         enqueueStepCounterWork(appContext)
+        stepCounterRepository.startLiveUpdates(scope)
         scope.launch { stepCounterRepository.recordReading() }
+    }
+
+    fun onAppBackground() {
+        stepCounterRepository.stopLiveUpdates()
     }
 }
