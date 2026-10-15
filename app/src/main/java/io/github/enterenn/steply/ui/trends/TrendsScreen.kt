@@ -31,6 +31,7 @@ import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.data.steps.DailyGoalDefault
 import io.github.enterenn.steply.data.steps.TrendDayBar
+import io.github.enterenn.steply.data.steps.averageTrendKcal
 import io.github.enterenn.steply.data.steps.averageTrendSteps
 import io.github.enterenn.steply.data.steps.formatTrendAxisTick
 import io.github.enterenn.steply.data.steps.groupThousands
@@ -135,10 +136,10 @@ fun TrendsScreen(container: AppContainer) {
         ) {
             SteplyStatTile(
                 glyph = FireGlyph,
-                value = when {
-                    year -> ExampleYearKcal
-                    month -> ExampleMonthKcal
-                    else -> stringResource(R.string.gallery_stat_kcal_value)
+                value = if (year) {
+                    ExampleYearKcal
+                } else {
+                    groupThousands(averageTrendKcal(chartBars).toLong())
                 },
                 unit = stringResource(R.string.gallery_stat_kcal_unit),
                 caption = stringResource(R.string.gallery_stat_kcal_caption),
@@ -280,7 +281,6 @@ private val ExampleYearLabels = listOf(
 )
 private const val ExampleChartGoal = 2000
 private const val ExampleYearMax = 4300
-private const val ExampleMonthKcal = "142"
 private const val ExampleYearKcal = "210"
 private const val ExampleYearStepsValue = "3650"
 
