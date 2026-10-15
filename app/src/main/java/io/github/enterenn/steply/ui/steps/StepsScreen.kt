@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -104,17 +103,6 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
         ActivityResultContracts.RequestPermission(),
     ) { _ ->
         container.onAppForeground()
-    }
-
-    LaunchedEffect(granted) {
-        if (
-            !granted &&
-            !container.activityRecognitionPromptShown &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-        ) {
-            container.activityRecognitionPromptShown = true
-            permissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
-        }
     }
 
     val week = remember { currentWeek() }

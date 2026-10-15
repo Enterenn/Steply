@@ -57,6 +57,7 @@ import io.github.enterenn.steply.ui.menu.AboutScreen
 import io.github.enterenn.steply.ui.menu.DataScreen
 import io.github.enterenn.steply.ui.menu.MenuScreen
 import io.github.enterenn.steply.ui.menu.ProfileScreen
+import io.github.enterenn.steply.ui.onboarding.OnboardingScreen
 import io.github.enterenn.steply.ui.steps.GoalEditorSheet
 import io.github.enterenn.steply.ui.steps.StepsScreen
 import io.github.enterenn.steply.ui.components.pressBounce
@@ -83,6 +84,7 @@ private enum class Tab(@StringRes val label: Int, val glyph: String) {
 
 @Composable
 fun SteplyApp(container: AppContainer) {
+    val onboardingComplete by container.onboardingComplete.collectAsState()
     var selected by rememberSaveable { mutableStateOf(Tab.Steps) }
     var menuDestination by rememberSaveable { mutableStateOf(MenuDestination.Menu) }
     var editingGoal by rememberSaveable { mutableStateOf(false) }
@@ -112,7 +114,9 @@ fun SteplyApp(container: AppContainer) {
                     .fillMaxWidth()
                     .clipToBounds(),
             ) {
-                when (selected) {
+                if (onboardingComplete != true) {
+                    if (onboardingComplete == false) OnboardingScreen(container)
+                } else when (selected) {
                     Tab.Steps -> StepsScreen(container, onEditGoal = { editingGoal = true })
                     Tab.Trends -> TrendsScreen(container)
                     Tab.Menu -> when (menuDestination) {
@@ -135,14 +139,14 @@ fun SteplyApp(container: AppContainer) {
                     }
                 }
             }
-            if (!(selected == Tab.Menu && menuDestination != MenuDestination.Menu)) {
+            if (onboardingComplete == true && !(selected == Tab.Menu && menuDestination != MenuDestination.Menu)) {
                 TabBar(
                     selected = selected,
                     onSelect = { selected = it },
                 )
             }
         }
-        if (editingGoal) {
+        if (onboardingComplete == true && editingGoal) {
             GoalEditorSheet(
                 goal = goal,
                 stepsToday = stepsToday,
