@@ -53,6 +53,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -71,6 +72,7 @@ import androidx.compose.runtime.collectAsState
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.data.steps.DailyGoalDefault
+import io.github.enterenn.steply.data.steps.derivedActivity
 import io.github.enterenn.steply.data.steps.DailyGoalMax
 import io.github.enterenn.steply.data.steps.DailyGoalMin
 import io.github.enterenn.steply.data.steps.resolveDailyGoal
@@ -83,6 +85,8 @@ import io.github.enterenn.steply.ui.theme.SteplyTheme
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
+import java.util.Locale
+import kotlin.math.roundToLong
 
 @Composable
 fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
@@ -132,7 +136,7 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
             goal = goal,
             onEditGoal = onEditGoal,
         )
-        DerivedStatsCard()
+        DerivedStatsCard(steps)
         if (!granted) {
             PermissionDeniedContent(
                 onAllow = { permissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION) },
@@ -343,7 +347,15 @@ internal fun GoalEditorSheet(
     }
 
 @Composable
-private fun DerivedStatsCard() {
+private fun DerivedStatsCard(steps: Long) {
+    val metrics = derivedActivity(steps)
+    val comma = LocalConfiguration.current.locales[0].language == "fr"
+    val kcal = stringResource(R.string.steps_stat_kcal, formatStepCount(metrics.kilocalories.toLong()))
+    val distance = stringResource(
+        R.string.steps_stat_distance,
+        formatDistanceNumber(metrics.distanceKm, comma),
+    )
+    val duration = formatWalkingClock(metrics.walkingMinutes)
     SteplyCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -351,22 +363,22 @@ private fun DerivedStatsCard() {
         ) {
             DerivedStat(
                 glyph = FireGlyph,
-                value = stringResource(R.string.steps_stat_kcal),
-                label = stringResource(R.string.steps_stat_kcal_a11y),
+                value = kcal,
+                label = stringResource(R.string.steps_stat_kcal_a11y, kcal),
                 modifier = Modifier.weight(1f),
             )
             StatRule()
             DerivedStat(
                 glyph = PinGlyph,
-                value = stringResource(R.string.steps_stat_distance),
-                label = stringResource(R.string.steps_stat_distance_a11y),
+                value = distance,
+                label = stringResource(R.string.steps_stat_distance_a11y, distance),
                 modifier = Modifier.weight(1f),
             )
             StatRule()
             DerivedStat(
                 glyph = ClockGlyph,
-                value = stringResource(R.string.steps_stat_duration),
-                label = stringResource(R.string.steps_stat_duration_a11y),
+                value = duration,
+                label = stringResource(R.string.steps_stat_duration_a11y, duration),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -496,6 +508,19 @@ private val StatRuleWidth = 1.dp
 private fun formatStepCount(steps: Long): String {
     val digits = steps.coerceAtLeast(0L).toString()
     return digits.reversed().chunked(3).joinToString(" ").reversed()
+}
+
+private fun formatDistanceNumber(kilometers: Double, comma: Boolean): String {
+    val text = String.format(Locale.US, "%.2f", kilometers.coerceAtLeast(0.0))
+    return if (comma) text.replace('.', ',') else text
+}
+
+private fun formatWalkingClock(minutes: Double): String {
+    val totalSeconds = (minutes.coerceAtLeast(0.0) * 60.0).roundToLong()
+    val hours = totalSeconds / 3_600
+    val mins = (totalSeconds % 3_600) / 60
+    val secs = totalSeconds % 60
+    return String.format(Locale.US, "%02d:%02d:%02d", hours, mins, secs)
 }
 
 private const val FireGlyph = "\uE242"

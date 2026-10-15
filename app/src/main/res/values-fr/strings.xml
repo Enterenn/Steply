@@ -38,12 +38,11 @@
     <string name="steps_goal_cancel">Annuler</string>
     <string name="steps_goal_error">Saisis une valeur entre 1 000 et 30 000.</string>
     <string name="steps_goal_input_a11y">Objectif de pas</string>
-    <string name="steps_stat_kcal">120 kcal</string>
-    <string name="steps_stat_distance">1,57 km</string>
-    <string name="steps_stat_duration">00:37:56</string>
-    <string name="steps_stat_kcal_a11y">Calories, 120 kcal</string>
-    <string name="steps_stat_distance_a11y">Distance, 1,57 km</string>
-    <string name="steps_stat_duration_a11y">Durée de marche, 00:37:56</string>
+    <string name="steps_stat_kcal">%1$s kcal</string>
+    <string name="steps_stat_distance">%1$s km</string>
+    <string name="steps_stat_kcal_a11y">Calories, %1$s</string>
+    <string name="steps_stat_distance_a11y">Distance, %1$s</string>
+    <string name="steps_stat_duration_a11y">Durée de marche, %1$s</string>
     <string name="trends_period_7">7 jours</string>
     <string name="trends_period_30">30 jours</string>
     <string name="trends_period_12">12 mois</string>
