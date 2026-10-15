@@ -43,6 +43,9 @@
     <string name="steps_stat_kcal_a11y">Calories, %1$s</string>
     <string name="steps_stat_distance_a11y">Distance, %1$s</string>
     <string name="steps_stat_duration_a11y">Walking duration, %1$s</string>
+    <string name="steps_collection_sensor_missing">Step sensor unavailable</string>
+    <string name="steps_collection_timed_out">Last reading failed</string>
+    <string name="steps_collection_no_reading">No reading yet</string>
     <string name="trends_period_7">7 days</string>
     <string name="trends_period_30">30 days</string>
     <string name="trends_period_12">12 months</string>
