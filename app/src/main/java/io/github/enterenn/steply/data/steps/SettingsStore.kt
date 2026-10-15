@@ -18,6 +18,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.ui.theme.AccentPreset
 import java.io.IOException
+import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.util.Locale
@@ -38,6 +39,7 @@ private val ThemeKey = stringPreferencesKey("theme_mode")
 private val AccentKey = stringPreferencesKey("accent")
 private val LanguageKey = stringPreferencesKey("language")
 private val GoalNotifiedOnKey = stringPreferencesKey("goal_notified_on")
+private val LastOptimizationKey = stringPreferencesKey("last_optimization")
 
 private const val KilometersPerMile = 1.609344
 private const val PoundsPerKilogram = 2.2046226218
@@ -134,6 +136,24 @@ class SettingsStore(context: Context) {
 
     suspend fun setGoalNotifiedOn(day: LocalDate) {
         dataStore.edit { it[GoalNotifiedOnKey] = day.toString() }
+    }
+
+    suspend fun lastOptimization(): String? = dataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .first()[LastOptimizationKey]
+        ?.takeIf { raw ->
+            try {
+                Instant.parse(raw)
+                true
+            } catch (_: DateTimeParseException) {
+                false
+            }
+        }
+
+    suspend fun setLastOptimization(instant: Instant) {
+        dataStore.edit { it[LastOptimizationKey] = instant.toString() }
     }
 }
 

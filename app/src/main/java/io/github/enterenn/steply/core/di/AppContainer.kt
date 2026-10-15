@@ -53,6 +53,8 @@ class AppContainer(context: Context) {
         StepCounterRepository(
             dao = database.stepCounterReadingDao(),
             reader = StepCounterReader(appContext),
+            database = database,
+            settings = settingsStore,
         )
     }
 
