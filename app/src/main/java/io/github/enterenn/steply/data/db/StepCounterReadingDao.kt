@@ -14,4 +14,7 @@ interface StepCounterReadingDao {
 
     @Query("SELECT * FROM step_counter_readings ORDER BY id ASC")
     suspend fun allById(): List<StepCounterReadingEntity>
+
+    @Query("SELECT COUNT(*) FROM step_counter_readings")
+    suspend fun count(): Long
 }
