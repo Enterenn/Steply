@@ -29,8 +29,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
+import io.github.enterenn.steply.data.steps.DailyGoalDefault
 import io.github.enterenn.steply.data.steps.TrendDayBar
-import io.github.enterenn.steply.data.steps.TrendGoalSteps
 import io.github.enterenn.steply.data.steps.averageTrendSteps
 import io.github.enterenn.steply.data.steps.formatTrendAxisTick
 import io.github.enterenn.steply.data.steps.groupThousands
@@ -61,6 +61,7 @@ fun TrendsScreen(container: AppContainer) {
     val year = period == PeriodTwelveMonths
     val dayCount = if (month) ThirtyDayCount else SevenDayCount
     val readings by container.stepReadings.collectAsState()
+    val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
     var bars by remember { mutableStateOf<List<TrendDayBar>>(emptyList()) }
     LaunchedEffect(dayCount, readings, year) {
         if (year) return@LaunchedEffect
@@ -119,12 +120,12 @@ fun TrendsScreen(container: AppContainer) {
                         bar.steps.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
                     },
                     maxValue = maxValue,
-                    goalValue = TrendGoalSteps,
+                    goalValue = goal,
                     ticks = trendAxisTickValues(maxValue).map { value ->
                         SteplyChartTick(value, formatTrendAxisTick(value))
                     },
                     dayLabels = chartDayLabels(chartBars),
-                    contentDescription = chartDescription(chartBars),
+                    contentDescription = chartDescription(chartBars, goal),
                 )
             }
         }
@@ -222,7 +223,7 @@ private fun chartDayLabels(bars: List<TrendDayBar>): List<String> {
 }
 
 @Composable
-private fun chartDescription(bars: List<TrendDayBar>): String {
+private fun chartDescription(bars: List<TrendDayBar>, goal: Int): String {
     val monthLabel = DateTimeFormatter.ofPattern("MMM", Locale.getDefault())
     val parts = ArrayList<String>(bars.size)
     for (bar in bars) {
@@ -238,7 +239,7 @@ private fun chartDescription(bars: List<TrendDayBar>): String {
     return stringResource(
         R.string.trends_chart_days_a11y,
         bars.size,
-        groupThousands(TrendGoalSteps.toLong()),
+        groupThousands(goal.toLong()),
         spoken,
     )
 }

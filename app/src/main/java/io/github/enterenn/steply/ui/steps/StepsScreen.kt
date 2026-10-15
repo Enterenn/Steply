@@ -10,29 +10,49 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -42,12 +62,18 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.collectAsState
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
+import io.github.enterenn.steply.data.steps.DailyGoalDefault
+import io.github.enterenn.steply.data.steps.DailyGoalMax
+import io.github.enterenn.steply.data.steps.DailyGoalMin
+import io.github.enterenn.steply.data.steps.resolveDailyGoal
 import io.github.enterenn.steply.ui.components.SteplyCard
 import io.github.enterenn.steply.ui.components.SteplyDayPill
 import io.github.enterenn.steply.ui.components.SteplyPillButton
@@ -59,7 +85,7 @@ import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
 @Composable
-fun StepsScreen(container: AppContainer) {
+fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
     val context = LocalContext.current
     val granted by container.activityRecognitionGranted.collectAsState()
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -83,6 +109,7 @@ fun StepsScreen(container: AppContainer) {
     var selectedDay by rememberSaveable(key = "steps-week-day") { mutableIntStateOf(todayIndex()) }
     val selectedDate = week[selectedDay].date
     val readings by container.stepReadings.collectAsState()
+    val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
     var steps by remember { mutableLongStateOf(0L) }
     LaunchedEffect(selectedDate, readings) {
         steps = container.stepCounterRepository.stepsOn(selectedDate)
@@ -100,7 +127,11 @@ fun StepsScreen(container: AppContainer) {
             selectedIndex = selectedDay,
             onSelect = { selectedDay = it },
         )
-        StepsProgressCard(steps)
+        StepsProgressCard(
+            steps = steps,
+            goal = goal,
+            onEditGoal = onEditGoal,
+        )
         DerivedStatsCard()
         if (!granted) {
             PermissionDeniedContent(
@@ -151,19 +182,24 @@ private fun WeekDayCard(
 }
 
 @Composable
-private fun StepsProgressCard(steps: Long) {
+private fun StepsProgressCard(
+    steps: Long,
+    goal: Int,
+    onEditGoal: () -> Unit,
+) {
     val stepsText = formatStepCount(steps)
+    val goalText = formatStepCount(goal.toLong())
     SteplyCard {
         SteplyProgressRing(
             label = stringResource(R.string.steps_ring_label),
             valueText = stepsText,
-            goalText = stringResource(R.string.steps_ring_goal),
+            goalText = "/$goalText",
             value = steps.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt(),
-            goal = ExampleRingGoal,
+            goal = goal,
             contentDescription = stringResource(
                 R.string.steps_ring_a11y,
                 stepsText,
-                formatStepCount(ExampleRingGoal.toLong()),
+                goalText,
             ),
         )
         Box(
@@ -174,13 +210,137 @@ private fun StepsProgressCard(steps: Long) {
         ) {
             SteplyPillButton(
                 label = stringResource(R.string.steps_set_goal),
-                onClick = {},
+                onClick = onEditGoal,
                 style = SteplyPillButtonStyle.Secondary,
                 verticalPadding = SetGoalButtonPadding,
             )
         }
     }
 }
+
+@Composable
+internal fun GoalEditorSheet(
+    goal: Int,
+    onSave: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var draft by remember { mutableStateOf(goal.toString()) }
+    val parsed = draft.toIntOrNull()
+    val valid = parsed != null && parsed in DailyGoalMin..DailyGoalMax
+    val outOfRange = parsed != null && (
+        parsed > DailyGoalMax ||
+            (parsed < DailyGoalMin && draft.length >= DailyGoalMin.toString().length)
+        )
+    val canSave = valid && parsed != goal
+    val colors = SteplyTheme.colors
+    val spacing = SteplyTheme.spacing
+    val inputDescription = stringResource(R.string.steps_goal_input_a11y)
+    val focus = remember { FocusRequester() }
+    val scrim = remember { MutableInteractionSource() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = ScrimAlpha))
+                .clickable(interactionSource = scrim, indication = null, onClick = onDismiss),
+        )
+        Column(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))
+                .fillMaxWidth()
+                    .clip(RoundedCornerShape(topStart = SteplyTheme.radius.card, topEnd = SteplyTheme.radius.card))
+                    .background(colors.card)
+                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
+                    .padding(horizontal = spacing.screen)
+                    .padding(top = spacing.inline, bottom = spacing.card),
+            ) {
+                Box(
+                    Modifier
+                        .padding(vertical = spacing.inline)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        Modifier
+                            .width(SheetHandleWidth)
+                            .height(SheetHandleHeight)
+                            .clip(RoundedCornerShape(SheetHandleHeight))
+                            .background(colors.lightGray),
+                    )
+                }
+                BasicText(
+                    text = stringResource(R.string.steps_goal_title),
+                    modifier = Modifier.semantics { heading() },
+                    style = SteplyTheme.typography.title.copy(color = colors.text),
+                )
+                BasicTextField(
+                    value = draft,
+                    onValueChange = { raw -> draft = raw.filter(Char::isDigit).take(GoalDigitLimit) },
+                    modifier = Modifier
+                        .padding(top = spacing.card)
+                        .fillMaxWidth()
+                        .height(GoalFieldHeight)
+                        .focusRequester(focus)
+                        .semantics { contentDescription = inputDescription },
+                    textStyle = SteplyTheme.typography.body.copy(color = colors.text),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done,
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { if (canSave) onSave(resolveDailyGoal(parsed)) },
+                    ),
+                    singleLine = true,
+                    cursorBrush = SolidColor(colors.accent),
+                    decorationBox = { inner ->
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .border(
+                                    GoalFieldStroke,
+                                    if (outOfRange) colors.error else colors.gray,
+                                    RoundedCornerShape(SteplyTheme.radius.control),
+                                )
+                                .padding(horizontal = spacing.card),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            inner()
+                        }
+                    },
+                )
+                if (outOfRange) {
+                    BasicText(
+                        text = stringResource(R.string.steps_goal_error),
+                        modifier = Modifier.padding(top = spacing.inline),
+                        style = SteplyTheme.typography.caption.copy(color = colors.error),
+                    )
+                }
+                SteplyPillButton(
+                    label = stringResource(R.string.steps_goal_save),
+                    onClick = { if (canSave) onSave(resolveDailyGoal(parsed)) },
+                    modifier = Modifier
+                        .padding(top = spacing.card)
+                        .fillMaxWidth()
+                        .graphicsLayer { alpha = if (canSave) 1f else DisabledSaveAlpha },
+                )
+                Box(
+                    Modifier
+                        .padding(top = spacing.inline)
+                        .fillMaxWidth()
+                        .heightIn(min = GoalFieldHeight)
+                        .clickable(onClick = onDismiss),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BasicText(
+                        text = stringResource(R.string.steps_goal_cancel),
+                        style = SteplyTheme.typography.body.copy(color = colors.gray),
+                    )
+                }
+            }
+        }
+    }
 
 @Composable
 private fun DerivedStatsCard() {
@@ -323,10 +483,15 @@ private fun dayLabels(day: DayOfWeek): Pair<Int, Int> = when (day) {
 }
 
 private val SetGoalButtonPadding = 8.dp
+private val SheetHandleWidth = 36.dp
+private val SheetHandleHeight = 4.dp
+private val GoalFieldHeight = 56.dp
+private val GoalFieldStroke = 1.dp
+private const val GoalDigitLimit = 6
+private const val DisabledSaveAlpha = 0.4f
+private const val ScrimAlpha = 0.32f
 private val StatGlyphSize = 20.sp
 private val StatRuleWidth = 1.dp
-
-private const val ExampleRingGoal = 10000
 
 private fun formatStepCount(steps: Long): String {
     val digits = steps.coerceAtLeast(0L).toString()
