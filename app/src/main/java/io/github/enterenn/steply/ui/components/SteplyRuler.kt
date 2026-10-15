@@ -243,6 +243,7 @@ fun SteplyRuler(
                 .scrollable(
                     state = scrollable,
                     orientation = Orientation.Horizontal,
+                    reverseDirection = true,
                     flingBehavior = flingBehavior,
                 ),
         ) {
