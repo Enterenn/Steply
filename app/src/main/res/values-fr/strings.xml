@@ -43,8 +43,7 @@
     <string name="trends_period_30">30 jours</string>
     <string name="trends_period_12">12 mois</string>
     <string name="trends_range_12">nov. 2025 – oct. 2026</string>
-    <string name="trends_chart_a11y">Pas sur 7 jours. Objectif 2 000. Vendredi 0, samedi 0, dimanche 0, lundi 0, mardi 1 600, mercredi 2 200, jeudi 1 200.</string>
-    <string name="trends_chart_30_a11y">Pas sur 30 jours. Objectif 2 000. Jour 1 : 0, jour 2 : 400, jour 3 : 900, jour 4 : 1 400, jour 5 : 1 800, jour 6 : 2 200, jour 7 : 1 600, jour 8 : 800, jour 9 : 200, jour 10 : 0, jour 11 : 600, jour 12 : 1 100, jour 13 : 1 700, jour 14 : 2 400, jour 15 : 2 100, jour 16 : 1 500, jour 17 : 900, jour 18 : 300, jour 19 : 0, jour 20 : 500, jour 21 : 1 200, jour 22 : 1 900, jour 23 : 2 600, jour 24 : 2 000, jour 25 : 1 300, jour 26 : 700, jour 27 : 200, jour 28 : 0, jour 29 : 1 100, jour 30 : 1 800.</string>
+    <string name="trends_chart_days_a11y">Pas sur %1$d jours. Objectif %2$s. %3$s.</string>
     <string name="trends_chart_12_a11y">Pas sur 12 mois, novembre 2025 à octobre 2026. Novembre 0, décembre 0, janvier 0, février 0, mars 0, avril 0, mai 0, juin 2 400, juillet 3 400, août 4 200, septembre 4 000, octobre 3 600.</string>
     <string name="chart_axis_year_max">4,3k</string>
     <string name="chart_fri">Ven</string>
