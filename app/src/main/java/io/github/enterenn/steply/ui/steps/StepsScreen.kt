@@ -77,7 +77,10 @@ import io.github.enterenn.steply.data.steps.CollectionHealth
 import io.github.enterenn.steply.data.steps.DailyGoalDefault
 import io.github.enterenn.steply.data.steps.collectionHealth
 import io.github.enterenn.steply.data.steps.daysReachingGoal
+import io.github.enterenn.steply.data.steps.DistanceUnit
+import io.github.enterenn.steply.data.steps.Settings as SteplySettings
 import io.github.enterenn.steply.data.steps.derivedActivity
+import io.github.enterenn.steply.data.steps.kmToMi
 import io.github.enterenn.steply.data.steps.Profile
 import io.github.enterenn.steply.data.steps.DailyGoalMax
 import io.github.enterenn.steply.data.steps.DailyGoalMin
@@ -111,6 +114,7 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
     val readings by container.stepReadings.collectAsState()
     val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
     val profile by container.profile.collectAsState(initial = Profile())
+    val settings by container.settings.collectAsState(initial = SteplySettings())
     var steps by remember { mutableLongStateOf(0L) }
     var weekSteps by remember { mutableStateOf(List(week.size) { 0L }) }
     LaunchedEffect(selectedDate, readings) {
@@ -148,7 +152,12 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
             ),
             onEditGoal = onEditGoal,
         )
-        DerivedStatsCard(steps, profile.heightCm, profile.weightKg)
+        DerivedStatsCard(
+            steps,
+            profile.heightCm,
+            profile.weightKg,
+            miles = settings.distance == DistanceUnit.Mi,
+        )
         if (!granted) {
             PermissionDeniedContent(
                 onAllow = { permissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION) },
@@ -387,7 +396,7 @@ internal fun GoalEditorSheet(
     }
 
 @Composable
-private fun DerivedStatsCard(steps: Long, heightCm: Int?, weightKg: Int?) {
+private fun DerivedStatsCard(steps: Long, heightCm: Int?, weightKg: Int?, miles: Boolean) {
     val height = heightCm?.toDouble()
     val weight = weightKg?.toDouble()
     val metrics = when {
@@ -398,9 +407,10 @@ private fun DerivedStatsCard(steps: Long, heightCm: Int?, weightKg: Int?) {
     }
     val comma = LocalConfiguration.current.locales[0].language == "fr"
     val kcal = stringResource(R.string.steps_stat_kcal, formatStepCount(metrics.kilocalories.toLong()))
+    val distanceAmount = if (miles) kmToMi(metrics.distanceKm) else metrics.distanceKm
     val distance = stringResource(
-        R.string.steps_stat_distance,
-        formatDistanceNumber(metrics.distanceKm, comma),
+        if (miles) R.string.steps_stat_distance_mi else R.string.steps_stat_distance,
+        formatDistanceNumber(distanceAmount, comma),
     )
     val duration = formatWalkingClock(metrics.walkingMinutes)
     SteplyCard {
