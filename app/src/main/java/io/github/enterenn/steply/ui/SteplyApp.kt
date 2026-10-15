@@ -90,7 +90,7 @@ fun SteplyApp(container: AppContainer) {
         ) {
             when (selected) {
                 Tab.Steps -> StepsScreen(container)
-                Tab.Trends -> TrendsScreen()
+                Tab.Trends -> TrendsScreen(container)
                 Tab.Menu -> MenuScreen()
             }
         }

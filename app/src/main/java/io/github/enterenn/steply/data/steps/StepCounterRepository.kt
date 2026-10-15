@@ -71,6 +71,15 @@ class StepCounterRepository(
         return withContext(Dispatchers.Default) { daySteps(readings, day, zone) }
     }
 
+    suspend fun trendBars(
+        dayCount: Int,
+        today: LocalDate = LocalDate.now(),
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): List<TrendDayBar> {
+        val readings = readingsSnapshot()
+        return withContext(Dispatchers.Default) { trendDayBars(readings, today, dayCount, zone) }
+    }
+
     suspend fun recordCumulative(cumulativeSteps: Long) = gate.withLock {
         writeCumulative(cumulativeSteps)
     }
