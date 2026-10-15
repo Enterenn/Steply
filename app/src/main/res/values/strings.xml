@@ -55,17 +55,14 @@
     <string name="trends_period_7">7 days</string>
     <string name="trends_period_30">30 days</string>
     <string name="trends_period_12">12 months</string>
-    <string name="trends_range_12">Nov 2025 – Oct 2026</string>
+    <string name="trends_range_12">%1$s – %2$s</string>
     <string name="trends_chart_days_a11y">Steps over %1$d days. Goal %2$s. %3$s.</string>
     <string name="trends_chart_days_goals_a11y">Steps over %1$d days. Goals %2$s. %3$s.</string>
-    <string name="trends_chart_12_a11y">Steps over 12 months, November 2025 to October 2026. November 0, December 0, January 0, February 0, March 0, April 0, May 0, June 2 400, July 3 400, August 4 200, September 4 000, October 3 600.</string>
+    <string name="trends_chart_12_a11y">Steps over 12 months, %1$s to %2$s. %3$s.</string>
     <string name="trends_summary_title">This period</string>
     <string name="trends_peak_label">Peak day</string>
     <string name="trends_low_label">Lowest day</string>
     <string name="trends_total_label">Total</string>
-    <string name="chart_axis_year_max">4.3k</string>
-    <string name="chart_axis_goal">2k</string>
-    <string name="chart_axis_zero">0</string>
     <string name="chart_fri">Fri</string>
     <string name="chart_sat">Sat</string>
     <string name="chart_sun">Sun</string>
@@ -106,6 +103,7 @@
     <string name="data_last_reading_line">Last reading · %1$s</string>
     <string name="data_readings">Readings</string>
     <string name="data_database">Database</string>
+    <string name="data_last_optimization">Last optimization</string>
     <string name="data_not_set">Not set</string>
     <string name="data_file">File</string>
     <string name="data_export">Export</string>

@@ -195,6 +195,10 @@ fun DataScreen(container: AppContainer, onBack: () -> Unit) {
                     value = formatStorageSize(databaseBytes, locale),
                     label = stringResource(R.string.data_database),
                 )
+                FootprintKpi(
+                    value = stringResource(R.string.data_not_set),
+                    label = stringResource(R.string.data_last_optimization),
+                )
             }
             DataCard(title = stringResource(R.string.data_file)) {
                 SteplyPillButton(

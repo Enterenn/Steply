@@ -2,6 +2,7 @@ package io.github.enterenn.steply.data.steps
 
 import io.github.enterenn.steply.data.db.StepCounterReadingDao
 import io.github.enterenn.steply.data.db.StepCounterReadingEntity
+import io.github.enterenn.steply.data.steps.trendMonthBars as aggregateMonths
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -78,6 +79,14 @@ class StepCounterRepository(
     ): List<TrendDayBar> {
         val readings = readingsSnapshot()
         return withContext(Dispatchers.Default) { trendDayBars(readings, today, dayCount, zone) }
+    }
+
+    suspend fun trendMonthBars(
+        today: LocalDate = LocalDate.now(),
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): List<TrendMonthBar> {
+        val readings = readingsSnapshot()
+        return withContext(Dispatchers.Default) { aggregateMonths(readings, today, zone) }
     }
 
     suspend fun recordCumulative(cumulativeSteps: Long) = gate.withLock {

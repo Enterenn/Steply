@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -33,6 +34,8 @@ import io.github.enterenn.steply.data.steps.DailyGoalDefault
 import io.github.enterenn.steply.data.steps.DailyGoalHistory
 import io.github.enterenn.steply.data.steps.Profile
 import io.github.enterenn.steply.data.steps.TrendDayBar
+import io.github.enterenn.steply.data.steps.TrendMonthBar
+import io.github.enterenn.steply.data.steps.TrendMonthCount
 import io.github.enterenn.steply.data.steps.goalsForDays
 import io.github.enterenn.steply.data.steps.averageTrendKcal
 import io.github.enterenn.steply.data.steps.averageTrendSteps
@@ -44,6 +47,8 @@ import io.github.enterenn.steply.data.steps.showsTrendBarLabel
 import io.github.enterenn.steply.data.steps.trendAxisTickValues
 import io.github.enterenn.steply.data.steps.trendChartMax
 import io.github.enterenn.steply.data.steps.trendDayBars
+import io.github.enterenn.steply.data.steps.trendMonthBars
+import io.github.enterenn.steply.data.steps.trendYearDayCount
 import io.github.enterenn.steply.ui.components.SteplyCard
 import io.github.enterenn.steply.ui.components.SteplyChartTick
 import io.github.enterenn.steply.ui.components.SteplyListRow
@@ -63,20 +68,39 @@ fun TrendsScreen(container: AppContainer) {
     var period by remember { mutableIntStateOf(PeriodSevenDays) }
     val month = period == PeriodThirtyDays
     val year = period == PeriodTwelveMonths
-    val dayCount = if (month) ThirtyDayCount else SevenDayCount
+    val today = LocalDate.now()
+    val dayCount = if (year) {
+        trendYearDayCount(today)
+    } else if (month) {
+        ThirtyDayCount
+    } else {
+        SevenDayCount
+    }
     val readings by container.stepReadings.collectAsState()
     val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
     val goalHistory by container.dailyGoalHistory.collectAsState(initial = DailyGoalHistory())
     val profile by container.profile.collectAsState(initial = Profile())
     var bars by remember { mutableStateOf<List<TrendDayBar>>(emptyList()) }
-    LaunchedEffect(dayCount, readings, year) {
-        if (year) return@LaunchedEffect
-        bars = container.stepCounterRepository.trendBars(dayCount)
+    var monthBars by remember { mutableStateOf<List<TrendMonthBar>>(emptyList()) }
+    LaunchedEffect(dayCount, readings, year, today) {
+        val zone = ZoneId.systemDefault()
+        if (year) {
+            bars = container.stepCounterRepository.trendBars(dayCount, today, zone)
+            monthBars = container.stepCounterRepository.trendMonthBars(today, zone)
+        } else {
+            bars = container.stepCounterRepository.trendBars(dayCount)
+            monthBars = emptyList()
+        }
     }
-    val chartBars = when {
-        year -> emptyList()
-        bars.size == dayCount -> bars
-        else -> trendDayBars(emptyList(), LocalDate.now(), dayCount, ZoneId.systemDefault())
+    val chartBars = if (bars.size == dayCount) {
+        bars
+    } else {
+        trendDayBars(emptyList(), today, dayCount, ZoneId.systemDefault())
+    }
+    val plottedMonths = when {
+        !year -> emptyList()
+        monthBars.size == TrendMonthCount && monthBars.last().lastDay == today -> monthBars
+        else -> trendMonthBars(emptyList(), today, ZoneId.systemDefault())
     }
 
     Column(
@@ -102,7 +126,7 @@ fun TrendsScreen(container: AppContainer) {
         )
         if (year) {
             BasicText(
-                text = stringResource(R.string.trends_range_12),
+                text = yearRange(plottedMonths),
                 modifier = Modifier
                     .clip(RoundedCornerShape(SteplyTheme.radius.control))
                     .background(SteplyTheme.colors.lightGray)
@@ -112,17 +136,22 @@ fun TrendsScreen(container: AppContainer) {
         }
         SteplyCard {
             if (year) {
+                val monthGoals = goalsOnDays(plottedMonths.map { it.lastDay }, goal, goalHistory)
+                val maxValue = trendChartMax(
+                    plottedMonths.maxOfOrNull { it.steps } ?: 0L,
+                    monthGoals,
+                )
                 SteplyHistogram(
-                    values = ExampleYearSteps,
-                    maxValue = ExampleYearMax,
-                    goalValues = emptyList(),
-                    ticks = listOf(
-                        SteplyChartTick(ExampleYearMax, stringResource(R.string.chart_axis_year_max)),
-                        SteplyChartTick(ExampleChartGoal, stringResource(R.string.chart_axis_goal)),
-                        SteplyChartTick(0, stringResource(R.string.chart_axis_zero)),
-                    ),
-                    dayLabels = ExampleYearLabels,
-                    contentDescription = stringResource(R.string.trends_chart_12_a11y),
+                    values = plottedMonths.map { bar ->
+                        bar.steps.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+                    },
+                    maxValue = maxValue,
+                    goalValues = monthGoals,
+                    ticks = trendAxisTickValues(maxValue, monthGoals).map { value ->
+                        SteplyChartTick(value, formatTrendAxisTick(value))
+                    },
+                    dayLabels = monthBarLabels(plottedMonths),
+                    contentDescription = yearChartDescription(plottedMonths),
                 )
             } else {
                 val dayGoals = periodGoals(chartBars, goal, goalHistory)
@@ -150,9 +179,7 @@ fun TrendsScreen(container: AppContainer) {
         ) {
             SteplyStatTile(
                 glyph = FireGlyph,
-                value = if (year) {
-                    ExampleYearKcal
-                } else {
+                value = run {
                     val weightKg = profile.weightKg?.toDouble()
                     val kcal = if (weightKg == null) {
                         averageTrendKcal(chartBars)
@@ -167,25 +194,24 @@ fun TrendsScreen(container: AppContainer) {
             )
             SteplyStatTile(
                 glyph = FootprintsGlyph,
-                value = if (year) {
-                    ExampleYearStepsValue
-                } else {
-                    groupThousands(averageTrendSteps(chartBars).toLong())
-                },
+                value = groupThousands(averageTrendSteps(chartBars).toLong()),
                 unit = stringResource(R.string.gallery_stat_steps_unit),
                 caption = stringResource(R.string.gallery_stat_steps_caption),
                 modifier = Modifier.weight(1f),
             )
         }
-        val peak = if (year) null else peakTrendDay(chartBars)
-        if (peak != null) {
-            PeriodSummaryCard(bars = chartBars, sevenDays = !month)
+        if (peakTrendDay(chartBars) != null) {
+            PeriodSummaryCard(
+                bars = chartBars,
+                sevenDays = period == PeriodSevenDays,
+                withYear = year,
+            )
         }
     }
 }
 
 @Composable
-private fun PeriodSummaryCard(bars: List<TrendDayBar>, sevenDays: Boolean) {
+private fun PeriodSummaryCard(bars: List<TrendDayBar>, sevenDays: Boolean, withYear: Boolean) {
     val peak = peakTrendDay(bars) ?: return
     val low = lowTrendDay(bars)?.takeUnless { it.day == peak.day }
     val spacing = SteplyTheme.spacing
@@ -205,12 +231,12 @@ private fun PeriodSummaryCard(bars: List<TrendDayBar>, sevenDays: Boolean) {
         )
         SteplyListRow(
             label = stringResource(R.string.trends_peak_label),
-            value = dayRowValue(peak, sevenDays, unit),
+            value = dayRowValue(peak, sevenDays, withYear, unit),
         )
         if (low != null) {
             SteplyListRow(
                 label = stringResource(R.string.trends_low_label),
-                value = dayRowValue(low, sevenDays, unit),
+                value = dayRowValue(low, sevenDays, withYear, unit),
             )
         }
         SteplyListRow(
@@ -221,11 +247,16 @@ private fun PeriodSummaryCard(bars: List<TrendDayBar>, sevenDays: Boolean) {
 }
 
 @Composable
-private fun dayRowValue(bar: TrendDayBar, sevenDays: Boolean, unit: String): String {
-    val date = if (sevenDays) {
-        "${stringResource(chartAbbreviation(bar.day.dayOfWeek))} ${bar.day.dayOfMonth}"
-    } else {
-        "${bar.day.dayOfMonth}/${bar.day.monthValue}"
+private fun dayRowValue(
+    bar: TrendDayBar,
+    sevenDays: Boolean,
+    withYear: Boolean,
+    unit: String,
+): String {
+    val date = when {
+        sevenDays -> "${stringResource(chartAbbreviation(bar.day.dayOfWeek))} ${bar.day.dayOfMonth}"
+        withYear -> "${bar.day.dayOfMonth}/${bar.day.monthValue}/${bar.day.year}"
+        else -> "${bar.day.dayOfMonth}/${bar.day.monthValue}"
     }
     return "$date, ${groupThousands(bar.steps)} $unit"
 }
@@ -247,14 +278,75 @@ private fun periodGoals(
     bars: List<TrendDayBar>,
     currentGoal: Int,
     history: DailyGoalHistory,
+): List<Int> = goalsOnDays(bars.map { it.day }, currentGoal, history)
+
+private fun goalsOnDays(
+    days: List<LocalDate>,
+    currentGoal: Int,
+    history: DailyGoalHistory,
 ): List<Int> {
-    val days = bars.map { it.day }
     val recordedStart = history.startingGoal
     return if (recordedStart == null) {
         goalsForDays(days, currentGoal, emptyList())
     } else {
         goalsForDays(days, recordedStart, history.changes)
     }
+}
+
+@Composable
+private fun yearRange(months: List<TrendMonthBar>): String {
+    val first = months.firstOrNull() ?: return ""
+    val format = DateTimeFormatter.ofPattern("MMM yyyy", chartLocale())
+    return stringResource(
+        R.string.trends_range_12,
+        format.format(first.lastDay),
+        format.format(months.last().lastDay),
+    )
+}
+
+@Composable
+private fun yearChartDescription(months: List<TrendMonthBar>): String {
+    val first = months.firstOrNull() ?: return ""
+    val locale = chartLocale()
+    val full = DateTimeFormatter.ofPattern("MMMM yyyy", locale)
+    val monthOnly = DateTimeFormatter.ofPattern("MMMM", locale)
+    val parts = ArrayList<String>(months.size)
+    for ((index, bar) in months.withIndex()) {
+        val name = monthOnly.format(bar.lastDay)
+        val shown = if (index == 0 && name.isNotEmpty()) {
+            name.replaceFirstChar { char ->
+                if (char.isLowerCase()) char.titlecase(locale) else char.toString()
+            }
+        } else {
+            name
+        }
+        parts += "$shown ${groupThousands(bar.steps)}"
+    }
+    return stringResource(
+        R.string.trends_chart_12_a11y,
+        full.format(first.lastDay),
+        full.format(months.last().lastDay),
+        parts.joinToString(", "),
+    )
+}
+
+@Composable
+private fun chartLocale(): Locale {
+    val locales = LocalConfiguration.current.locales
+    return if (locales.isEmpty) Locale.getDefault() else locales[0]
+}
+
+private fun monthBarLabels(months: List<TrendMonthBar>): List<String> {
+    val labels = ArrayList<String>(months.size)
+    for ((index, bar) in months.withIndex()) {
+        labels += if (showsTrendBarLabel(index, months.size)) {
+            val month = bar.lastDay.monthValue
+            if (month < 10) "0$month" else month.toString()
+        } else {
+            ""
+        }
+    }
+    return labels
 }
 
 @Composable
@@ -320,17 +412,6 @@ private const val PeriodThirtyDays = 1
 private const val PeriodTwelveMonths = 2
 private const val SevenDayCount = 7
 private const val ThirtyDayCount = 30
-
-private val ExampleYearSteps = listOf(
-    0, 0, 0, 0, 0, 0, 0, 2400, 3400, 4200, 4000, 3600,
-)
-private val ExampleYearLabels = listOf(
-    "11", "12", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10",
-)
-private const val ExampleChartGoal = 2000
-private const val ExampleYearMax = 4300
-private const val ExampleYearKcal = "210"
-private const val ExampleYearStepsValue = "3650"
 
 private const val FireGlyph = "\uE242"
 private const val FootprintsGlyph = "\uEA88"
