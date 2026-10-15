@@ -9,13 +9,16 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.BasicText
@@ -29,11 +32,18 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.collectAsState
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
@@ -84,6 +94,7 @@ fun StepsScreen(container: AppContainer) {
             onSelect = { selectedDay = it },
         )
         StepsProgressCard()
+        DerivedStatsCard()
         if (!granted) {
             PermissionDeniedContent(
                 onAllow = { permissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION) },
@@ -160,6 +171,83 @@ private fun StepsProgressCard() {
 }
 
 @Composable
+private fun DerivedStatsCard() {
+    SteplyCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            DerivedStat(
+                glyph = FireGlyph,
+                value = stringResource(R.string.steps_stat_kcal),
+                label = stringResource(R.string.steps_stat_kcal_a11y),
+                modifier = Modifier.weight(1f),
+            )
+            StatRule()
+            DerivedStat(
+                glyph = PinGlyph,
+                value = stringResource(R.string.steps_stat_distance),
+                label = stringResource(R.string.steps_stat_distance_a11y),
+                modifier = Modifier.weight(1f),
+            )
+            StatRule()
+            DerivedStat(
+                glyph = ClockGlyph,
+                value = stringResource(R.string.steps_stat_duration),
+                label = stringResource(R.string.steps_stat_duration_a11y),
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun DerivedStat(
+    glyph: String,
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier.semantics(mergeDescendants = true) { contentDescription = label },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(SteplyTheme.spacing.stack),
+    ) {
+        BasicText(
+            text = glyph,
+            modifier = Modifier.clearAndSetSemantics {},
+            style = TextStyle(
+                fontFamily = PhosphorRegular,
+                fontSize = StatGlyphSize,
+                lineHeight = StatGlyphSize,
+                color = SteplyTheme.colors.text,
+            ),
+        )
+        BasicText(
+            text = value,
+            modifier = Modifier.fillMaxWidth().clearAndSetSemantics {},
+            style = SteplyTheme.typography.caption.copy(
+                color = SteplyTheme.colors.text,
+                textAlign = TextAlign.Center,
+            ),
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
+}
+
+@Composable
+private fun StatRule() {
+    Box(
+        Modifier
+            .width(StatRuleWidth)
+            .height(SteplyTheme.spacing.card)
+            .background(SteplyTheme.colors.accent)
+            .clearAndSetSemantics {},
+    )
+}
+
+@Composable
 private fun PermissionDeniedContent(onAllow: () -> Unit, onOpenSettings: () -> Unit) {
     val colors = SteplyTheme.colors
     val spacing = SteplyTheme.spacing
@@ -222,9 +310,17 @@ private fun dayLabels(day: DayOfWeek): Pair<Int, Int> = when (day) {
 }
 
 private val SetGoalButtonPadding = 8.dp
+private val StatGlyphSize = 20.sp
+private val StatRuleWidth = 1.dp
 
 private const val ExampleRingSteps = 3750
 private const val ExampleRingGoal = 10000
+
+private const val FireGlyph = "\uE242"
+private const val PinGlyph = "\uE316"
+private const val ClockGlyph = "\uE19A"
+
+private val PhosphorRegular = FontFamily(Font(R.font.phosphor_regular))
 
 private val WeekOrder = listOf(
     DayOfWeek.MONDAY,
