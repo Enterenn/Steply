@@ -1,5 +1,6 @@
 package io.github.enterenn.steply.data.steps
 
+import io.github.enterenn.steply.data.db.AppDatabase
 import io.github.enterenn.steply.data.db.StepCounterReadingDao
 import io.github.enterenn.steply.data.db.StepCounterReadingEntity
 import io.github.enterenn.steply.data.steps.trendMonthBars as aggregateMonths
@@ -7,6 +8,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.IdentityHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,16 +37,21 @@ enum class StepReadStatus {
 data class StepReadingsState(
     val snapshot: StepCounterSnapshot? = null,
     val status: StepReadStatus = StepReadStatus.Idle,
+    val lastOptimization: String? = null,
 )
 
 class StepCounterRepository(
     private val dao: StepCounterReadingDao,
     private val reader: StepCounterReader,
+    private val database: AppDatabase,
+    private val settings: SettingsStore,
 ) {
     private val gate = Mutex()
     private val cacheLock = Mutex()
     private val cachedReadings = mutableListOf<StepReading>()
     private var cacheLoaded = false
+    private var lastOptimization: String? = null
+    private var lastOptimizationLoaded = false
     private val _state = MutableStateFlow(StepReadingsState())
     val state: StateFlow<StepReadingsState> = _state.asStateFlow()
     private var lastLiveCumulative: Long? = null
@@ -114,8 +121,13 @@ class StepCounterRepository(
             val hardware = lastLiveCumulative ?: _state.value.snapshot?.cumulativeSteps
             val zone = ZoneId.systemDefault().rules.getOffset(now).toStoredOffset()
             storeReadings(anchorReadings(parsed.readings, hardware, now, zone))
+            compactLocked()
         }
         parsed
+    }
+
+    suspend fun compactStoredReadings() = gate.withLock {
+        compactLocked()
     }
 
     suspend fun purgeSteps() = gate.withLock {
@@ -187,11 +199,43 @@ class StepCounterRepository(
         cachedReadings.add(reading)
     }
 
+    private suspend fun compactLocked() {
+        val stored = dao.allById()
+        if (stored.size < 2) return
+        val now = Instant.now()
+        val zone = ZoneId.systemDefault()
+        val projected = stored.map { StepReading(it.cumulativeSteps, Instant.parse(it.recordedAt)) }
+        val compacted = compactReadings(projected, zone, now)
+        if (compacted.size >= stored.size) return
+        val positions = IdentityHashMap<StepReading, Int>(projected.size)
+        for (index in projected.indices) positions[projected[index]] = index
+        val kept = ArrayList<CsvReading>(compacted.size)
+        for (reading in compacted) {
+            val index = positions[reading] ?: return
+            val entity = stored[index]
+            kept.add(CsvReading(entity.cumulativeSteps, reading.recordedAt, entity.zoneOffset))
+        }
+        storeReadings(kept)
+        withContext(Dispatchers.IO) {
+            // replaceAll est déjà commis. VACUUM échoue dans une transaction ouverte.
+            database.openHelper.writableDatabase.execSQL("VACUUM")
+        }
+        val recorded = now.toString()
+        settings.setLastOptimization(now)
+        lastOptimization = recorded
+        lastOptimizationLoaded = true
+        publishLatest()
+    }
+
     private suspend fun publishLatest() {
+        if (!lastOptimizationLoaded) {
+            lastOptimization = settings.lastOptimization()
+            lastOptimizationLoaded = true
+        }
         val latest = dao.latestTwo()
         val current = latest.getOrNull(0)
         if (current == null) {
-            _state.update { it.copy(snapshot = null) }
+            _state.update { it.copy(snapshot = null, lastOptimization = lastOptimization) }
             return
         }
         val previous = latest.getOrNull(1)
@@ -206,6 +250,7 @@ class StepCounterRepository(
                     counterReset = delta?.counterReset == true,
                 ),
                 status = StepReadStatus.Idle,
+                lastOptimization = lastOptimization,
             )
         }
     }

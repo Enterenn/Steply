@@ -17,7 +17,9 @@ class StepCounterWorker(
     override suspend fun doWork(): Result {
         if (!applicationContext.hasActivityRecognitionPermission()) return Result.success()
         val app = applicationContext as SteplyApplication
-        app.container.stepCounterRepository.recordReading()
+        val repository = app.container.stepCounterRepository
+        repository.recordReading()
+        repository.compactStoredReadings()
         return Result.success()
     }
 }
