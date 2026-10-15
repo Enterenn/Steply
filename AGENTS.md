@@ -51,6 +51,7 @@ Réponds en français. Priorités : résultat fiable, coût minimal, peu d’it�
 - Aucun `git commit` ni `git push` sans accord explicite.
 - Aucun `git reset`, `checkout`, `restore`, `stash`, `clean`, `rebase`, `merge` ou `branch -D` sans accord explicite. Ne détruis jamais les changements existants.
 - **Langue des commits :** Tous les messages de commit doivent être rédigés en anglais.
+- **Version :** `versionName` vaut `major.minor.patch`, calé sur les jalons M et les exigences F du cahier des charges. `major` reste 0 jusqu’à la 1.0. `minor` est le jalon en cours (M4 → 4) : au changement de jalon, il prend ce numéro et `patch` repart à 0. `patch` est le nombre de F de ce jalon livrées. Une F partielle ne compte pas. Incrémente dans le commit de la feature, avant le merge. Ne modifie pas `versionCode` à la main : Gradle le calcule.
 
 ## 6. Kotlin, Android et Jetpack Compose
 - Respecte en priorité l’architecture, les conventions, la navigation, l’injection de dépendances et la gestion d’état déjà présentes. N’introduis pas de nouvelle architecture ou bibliothèque sans accord.

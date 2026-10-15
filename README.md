@@ -32,7 +32,7 @@ Requires JDK 17+ and the Android SDK (`minSdk` 26, `compileSdk` 35).
 ./gradlew :app:testDebugUnitTest
 ```
 
-The version lives in `version.properties` (SemVer).
+The version lives in `version.properties` (SemVer). While `major` is 0, `minor` is the current milestone and `patch` is the number of finished features in that milestone.
 
 ## Design assets
 
