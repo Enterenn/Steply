@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -30,6 +31,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
@@ -71,7 +73,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.collectAsState
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
+import io.github.enterenn.steply.data.steps.CollectionHealth
 import io.github.enterenn.steply.data.steps.DailyGoalDefault
+import io.github.enterenn.steply.data.steps.collectionHealth
 import io.github.enterenn.steply.data.steps.derivedActivity
 import io.github.enterenn.steply.data.steps.DailyGoalMax
 import io.github.enterenn.steply.data.steps.DailyGoalMin
@@ -134,6 +138,11 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
         StepsProgressCard(
             steps = steps,
             goal = goal,
+            health = collectionHealth(
+                permissionGranted = granted,
+                status = readings.status,
+                hasSnapshot = readings.snapshot != null,
+            ),
             onEditGoal = onEditGoal,
         )
         DerivedStatsCard(steps)
@@ -189,11 +198,15 @@ private fun WeekDayCard(
 private fun StepsProgressCard(
     steps: Long,
     goal: Int,
+    health: CollectionHealth,
     onEditGoal: () -> Unit,
 ) {
     val stepsText = formatStepCount(steps)
     val goalText = formatStepCount(goal.toLong())
     SteplyCard {
+        if (health != CollectionHealth.Hidden) {
+            CollectionHealthLine(health)
+        }
         SteplyProgressRing(
             label = stringResource(R.string.steps_ring_label),
             valueText = stepsText,
@@ -386,6 +399,38 @@ private fun DerivedStatsCard(steps: Long) {
 }
 
 @Composable
+private fun CollectionHealthLine(health: CollectionHealth) {
+    val colors = SteplyTheme.colors
+    val (label, dot) = when (health) {
+        CollectionHealth.Hidden -> return
+        CollectionHealth.SensorMissing -> R.string.steps_collection_sensor_missing to colors.error
+        CollectionHealth.TimedOut -> R.string.steps_collection_timed_out to colors.error
+        CollectionHealth.NoReading -> R.string.steps_collection_no_reading to colors.gray
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = SteplyTheme.spacing.stack),
+        horizontalArrangement = Arrangement.spacedBy(
+            SteplyTheme.spacing.inline,
+            Alignment.CenterHorizontally,
+        ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(CollectionDotSize)
+                .background(dot, CircleShape)
+                .clearAndSetSemantics {},
+        )
+        BasicText(
+            text = stringResource(label),
+            style = SteplyTheme.typography.caption.copy(color = colors.text),
+        )
+    }
+}
+
+@Composable
 private fun DerivedStat(
     glyph: String,
     value: String,
@@ -504,6 +549,7 @@ private const val DisabledSaveAlpha = 0.4f
 private const val ScrimAlpha = 0.32f
 private val StatGlyphSize = 20.sp
 private val StatRuleWidth = 1.dp
+private val CollectionDotSize = 8.dp
 
 private fun formatStepCount(steps: Long): String {
     val digits = steps.coerceAtLeast(0L).toString()
