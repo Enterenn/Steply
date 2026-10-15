@@ -70,4 +70,10 @@
     <string name="chart_tue">Mar</string>
     <string name="chart_wed">Mer</string>
     <string name="chart_thu">Jeu</string>
+    <string name="menu_group_information">Informations</string>
+    <string name="menu_group_other">Autres</string>
+    <string name="menu_profile">Profil</string>
+    <string name="menu_data">Données</string>
+    <string name="menu_settings">Réglages</string>
+    <string name="menu_about">À propos</string>
 </resources>
