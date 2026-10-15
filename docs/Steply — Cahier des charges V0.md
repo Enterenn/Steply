@@ -22,6 +22,7 @@ Steply est la nouvelle version, réécrite de zéro, de l'application précédem
 | Interface | Design maison issu de Figma, **sans Material Design** | Décidé |
 | Langues | Français et anglais conservés | Décidé |
 | Données | Locales uniquement, sans compte, sans cloud | Décidé |
+| Numéro de version | `major.minor.patch`. `major` reste 0 jusqu'à la 1.0. `minor` est le jalon en cours (M5 → 5). `patch` compte les exigences F livrées de ce jalon ; une F partielle ne compte pas. `versionCode` est calculé par Gradle | Décidé |
 | Licence du code | Apache-2.0 (comme Astra) | Proposé |
 
 ## 3. Principes produit
@@ -81,12 +82,12 @@ Le bracelet propriétaire, le firmware, le PCB et la certification n'ont pas leu
 - **F-11** Anneau de progression : pas du jour, objectif, appui pour modifier l'objectif.
 - **F-12** Trois statistiques dérivées : kcal, distance, durée de marche.
 - **F-13** Indicateur discret de santé de la collecte.
-- **F-14** *\[À trancher\]* Compteur hebdomadaire « 3/7 » (jours d'objectif atteints) : à garder comme simple repère factuel, ou retirer pour rester cohérent avec « pas de gamification ».
+- **F-14** **\[Décidé\]** Compteur hebdomadaire « 3/7 » (jours d'objectif atteints), conservé comme repère factuel.
 
 ### 5.3 Trends
 
 - **F-20** Contrôle segmenté 7 jours / 30 jours, histogramme avec ligne d'objectif historique en pointillés.
-- **F-21** *\[À trancher\]* Vue 12 mois (présente dans l'app Astra, absente du Figma).
+- **F-21** **\[Décidé\]** Vue 12 mois, en plus de 7 et 30 jours.
 - **F-22** Deux tuiles : moyenne de kcal et moyenne de pas par jour sur la période ; carte du jour record.
 
 ### 5.4 Menu
@@ -103,7 +104,7 @@ Le bracelet propriétaire, le firmware, le PCB et la certification n'ont pas leu
 
 - **F-50** Carte « Background » : état de la collecte, dernière synchronisation.
 - **F-51** Carte « Footprint » : nombre d'échantillons, taille de la base, dernière optimisation.
-- **F-52** Export CSV, import CSV, suppression de toutes les données locales avec confirmation explicite.
+- **F-52** Export CSV, import CSV, suppression de toutes les données locales avec confirmation explicite. Le fichier est le même que l'export Astra : un export Astra s'importe dans Steply. Colonnes alignées sur le vocabulaire Open Wearables.
 
 ### 5.7 Réglages
 
@@ -259,9 +260,9 @@ Export des variables Figma en JSON, génération du code des tokens par script (
 
 ## 9. Données, export et import
 
-- **Format** : CSV avec colonnes alignées sur le vocabulaire Open Wearables (vocabulaire uniquement, aucune dépendance à un serveur).
+- **Format** : même fichier CSV que l'export Astra. Colonnes alignées sur le vocabulaire Open Wearables (vocabulaire uniquement, aucune dépendance à un serveur).
 - **Import** : validation stricte du format ; ne jamais faire confiance aux identifiants externes (leçon d'un bug d'Astra) ; rapport d'erreurs lisible.
-- **Migration depuis Astra** : l'export CSV d'Astra, importé dans Steply, sert de chemin de migration et de test de compatibilité.
+- **Migration depuis Astra** : un export CSV Astra doit s'importer dans Steply. C'est le chemin de migration et le test de compatibilité.
 - **Purge** : suppression complète avec confirmation explicite, irréversible, vérifiable dans My Data.
 
 ## 10. Distribution et licence
@@ -290,7 +291,7 @@ Export des variables Figma en JSON, génération du code des tokens par script (
 | M4 Écrans principaux | Steps, Trends | Écrans fidèles au Figma |
 | M5 Menu et réglages | Onboarding, Profil, My Data, Réglages, Help, À propos | Parcours complet |
 | M6 Export, i18n | CSV, import, purge, FR/EN complet | Fonctions de souveraineté |
-| M7 Beta | Checklist, F-Droid | Version 0.1.0 publiée |
+| M7 Beta | Checklist, F-Droid | Bêta publiée |
 
 Pas de dates à ce stade : l'ordre compte plus que le calendrier pour un projet solo.
 
@@ -310,8 +311,6 @@ Disponibilité du nom : le nom Steply n'a pas été vérifié ici. À contrôler
 
 | # | Question | Impact |
 | --- | --- | --- |
-| 2 | Compteur « 3/7 » sur Steps : garder ou retirer ? | F-14, cohérence « sans gamification » |
-| 3 | Vue 12 mois dans Trends ? | F-21, cadre Figma à créer |
 | 4 | Rouge et violet en clair : assombrir le fond ou texte gras et grand ? | Accessibilité des boutons |
 | 5 | Chiffrement : exports chiffrés uniquement, ou SQLCipher aussi ? | §7.4 |
 | 6 | Gris, vert, rouge, échelle typographique, espacements, rayons | Thème (M0) |
