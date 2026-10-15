@@ -84,6 +84,11 @@ fun TrendsScreen(container: AppContainer) {
             .padding(spacing.screen),
         verticalArrangement = Arrangement.spacedBy(spacing.stack),
     ) {
+        BasicText(
+            text = stringResource(R.string.tab_trends),
+            modifier = Modifier.semantics { heading() },
+            style = SteplyTheme.typography.body.copy(color = SteplyTheme.colors.gray),
+        )
         SteplySegmentedControl(
             options = listOf(
                 stringResource(R.string.trends_period_7),

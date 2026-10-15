@@ -137,6 +137,11 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
             .padding(spacing.screen),
         verticalArrangement = Arrangement.spacedBy(spacing.stack),
     ) {
+        BasicText(
+            text = stringResource(R.string.tab_steps),
+            modifier = Modifier.semantics { heading() },
+            style = SteplyTheme.typography.body.copy(color = SteplyTheme.colors.gray),
+        )
         WeekDayCard(
             days = week,
             selectedIndex = selectedDay,
