@@ -32,6 +32,14 @@ fun averageTrendSteps(bars: List<TrendDayBar>): Int {
     return ((sum + size / 2) / size).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
 }
 
+/** Moyenne des kcal entières de chaque jour. Défauts de derivedActivity, sans poids ni taille. */
+fun averageTrendKcal(bars: List<TrendDayBar>): Int {
+    if (bars.isEmpty()) return 0
+    val size = bars.size.toLong()
+    val sum = bars.sumOf { derivedActivity(it.steps).kilocalories.toLong() }
+    return ((sum + size / 2) / size).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+}
+
 /** Plus haut total strictement positif. À égalité, la barre la plus récente. */
 fun peakTrendDay(bars: List<TrendDayBar>): TrendDayBar? =
     bars.withIndex()
