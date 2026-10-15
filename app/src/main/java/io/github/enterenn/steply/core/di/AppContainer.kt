@@ -7,6 +7,7 @@ import io.github.enterenn.steply.data.db.AppDatabase
 import io.github.enterenn.steply.data.db.MIGRATION_1_2
 import io.github.enterenn.steply.data.steps.DailyGoalHistory
 import io.github.enterenn.steply.data.steps.DailyGoalStore
+import io.github.enterenn.steply.data.steps.OnboardingStore
 import io.github.enterenn.steply.data.steps.Profile
 import io.github.enterenn.steply.data.steps.ProfileStore
 import io.github.enterenn.steply.data.steps.StepCounterReader
@@ -71,6 +72,15 @@ class AppContainer(context: Context) {
         scope.launch { profileStore.setHeightCm(cm) }
     }
 
+    private val onboardingStore: OnboardingStore by lazy { OnboardingStore(appContext) }
+    private val _onboardingComplete = MutableStateFlow<Boolean?>(null)
+    val onboardingComplete: StateFlow<Boolean?> = _onboardingComplete.asStateFlow()
+
+    fun completeOnboarding() {
+        _onboardingComplete.value = true
+        scope.launch { onboardingStore.completeOnboarding() }
+    }
+
     private val _activityRecognitionGranted =
         MutableStateFlow(appContext.hasActivityRecognitionPermission())
     val activityRecognitionGranted: StateFlow<Boolean> = _activityRecognitionGranted.asStateFlow()
@@ -78,10 +88,14 @@ class AppContainer(context: Context) {
     val stepReadings: StateFlow<StepReadingsState>
         get() = stepCounterRepository.state
 
-    var activityRecognitionPromptShown: Boolean = false
-
     init {
         scope.launch { stepCounterRepository.refreshFromDatabase() }
+        scope.launch {
+            onboardingStore.complete.collect { done ->
+                if (done) _onboardingComplete.value = true
+                else if (_onboardingComplete.value != true) _onboardingComplete.value = false
+            }
+        }
     }
 
     fun onAppForeground() {
