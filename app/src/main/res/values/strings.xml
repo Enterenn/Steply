@@ -9,6 +9,10 @@
     <string name="steps_permission_allow">Allow</string>
     <string name="steps_permission_settings">Open settings</string>
     <string name="steps_week_title">This week</string>
+    <plurals name="steps_week_goal_a11y">
+        <item quantity="one">%1$d of %2$d days reached the goal</item>
+        <item quantity="other">%1$d of %2$d days reached the goal</item>
+    </plurals>
     <string name="day_pill_label">%1$s %2$s</string>
     <string name="day_mon_short">MON</string>
     <string name="day_tue_short">TUE</string>
