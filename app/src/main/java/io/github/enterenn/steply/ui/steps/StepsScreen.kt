@@ -79,6 +79,7 @@ import io.github.enterenn.steply.data.steps.DailyGoalDefault
 import io.github.enterenn.steply.data.steps.collectionHealth
 import io.github.enterenn.steply.data.steps.daysReachingGoal
 import io.github.enterenn.steply.data.steps.derivedActivity
+import io.github.enterenn.steply.data.steps.Profile
 import io.github.enterenn.steply.data.steps.DailyGoalMax
 import io.github.enterenn.steply.data.steps.DailyGoalMin
 import io.github.enterenn.steply.data.steps.acceptsDailyGoalChange
@@ -121,6 +122,7 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
     val selectedDate = week[selectedDay].date
     val readings by container.stepReadings.collectAsState()
     val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
+    val profile by container.profile.collectAsState(initial = Profile())
     var steps by remember { mutableLongStateOf(0L) }
     var weekSteps by remember { mutableStateOf(List(week.size) { 0L }) }
     LaunchedEffect(selectedDate, readings) {
@@ -158,7 +160,7 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
             ),
             onEditGoal = onEditGoal,
         )
-        DerivedStatsCard(steps)
+        DerivedStatsCard(steps, profile.heightCm, profile.weightKg)
         if (!granted) {
             PermissionDeniedContent(
                 onAllow = { permissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION) },
@@ -397,8 +399,15 @@ internal fun GoalEditorSheet(
     }
 
 @Composable
-private fun DerivedStatsCard(steps: Long) {
-    val metrics = derivedActivity(steps)
+private fun DerivedStatsCard(steps: Long, heightCm: Int?, weightKg: Int?) {
+    val height = heightCm?.toDouble()
+    val weight = weightKg?.toDouble()
+    val metrics = when {
+        height != null && weight != null -> derivedActivity(steps, height, weight)
+        height != null -> derivedActivity(steps, heightCm = height)
+        weight != null -> derivedActivity(steps, weightKg = weight)
+        else -> derivedActivity(steps)
+    }
     val comma = LocalConfiguration.current.locales[0].language == "fr"
     val kcal = stringResource(R.string.steps_stat_kcal, formatStepCount(metrics.kilocalories.toLong()))
     val distance = stringResource(

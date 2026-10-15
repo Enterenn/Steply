@@ -31,6 +31,7 @@ import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.data.steps.DailyGoalDefault
 import io.github.enterenn.steply.data.steps.DailyGoalHistory
+import io.github.enterenn.steply.data.steps.Profile
 import io.github.enterenn.steply.data.steps.TrendDayBar
 import io.github.enterenn.steply.data.steps.goalsForDays
 import io.github.enterenn.steply.data.steps.averageTrendKcal
@@ -66,6 +67,7 @@ fun TrendsScreen(container: AppContainer) {
     val readings by container.stepReadings.collectAsState()
     val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
     val goalHistory by container.dailyGoalHistory.collectAsState(initial = DailyGoalHistory())
+    val profile by container.profile.collectAsState(initial = Profile())
     var bars by remember { mutableStateOf<List<TrendDayBar>>(emptyList()) }
     LaunchedEffect(dayCount, readings, year) {
         if (year) return@LaunchedEffect
@@ -151,7 +153,13 @@ fun TrendsScreen(container: AppContainer) {
                 value = if (year) {
                     ExampleYearKcal
                 } else {
-                    groupThousands(averageTrendKcal(chartBars).toLong())
+                    val weightKg = profile.weightKg?.toDouble()
+                    val kcal = if (weightKg == null) {
+                        averageTrendKcal(chartBars)
+                    } else {
+                        averageTrendKcal(chartBars, weightKg = weightKg)
+                    }
+                    groupThousands(kcal.toLong())
                 },
                 unit = stringResource(R.string.gallery_stat_kcal_unit),
                 caption = stringResource(R.string.gallery_stat_kcal_caption),
