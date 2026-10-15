@@ -52,7 +52,7 @@ fun AboutScreen(onBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(spacing.screen),
+            .submenuPadding(),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

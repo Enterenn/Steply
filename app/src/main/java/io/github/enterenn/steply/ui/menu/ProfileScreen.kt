@@ -56,6 +56,13 @@ import io.github.enterenn.steply.data.steps.ProfileMeasureStep
 import io.github.enterenn.steply.data.steps.ProfileNameMaxLength
 import io.github.enterenn.steply.data.steps.ProfileWeightMaxKg
 import io.github.enterenn.steply.data.steps.ProfileWeightMinKg
+import io.github.enterenn.steply.data.steps.HeightUnit
+import io.github.enterenn.steply.data.steps.Settings
+import io.github.enterenn.steply.data.steps.WeightUnit
+import io.github.enterenn.steply.data.steps.cmToIn
+import io.github.enterenn.steply.data.steps.inchesToCm
+import io.github.enterenn.steply.data.steps.kgToLb
+import io.github.enterenn.steply.data.steps.lbToKg
 import io.github.enterenn.steply.ui.components.SteplyCard
 import io.github.enterenn.steply.ui.components.SteplyListRow
 import io.github.enterenn.steply.ui.components.SteplyPillButton
@@ -70,10 +77,14 @@ private val FieldStroke = 1.dp
 private const val EditName = "name"
 private const val EditWeight = "weight"
 private const val EditHeight = "height"
+private const val InchMajorEvery = 12
 
 @Composable
 fun ProfileScreen(container: AppContainer, onBack: () -> Unit) {
     val profile by container.profile.collectAsState(initial = Profile())
+    val settings by container.settings.collectAsState(initial = Settings())
+    val weightLb = settings.weight == WeightUnit.Lb
+    val heightIn = settings.height == HeightUnit.In
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     when (editing) {
         EditName -> NameEditor(
@@ -86,32 +97,42 @@ fun ProfileScreen(container: AppContainer, onBack: () -> Unit) {
         )
         EditWeight -> MeasureEditor(
             title = stringResource(R.string.profile_weight),
-            unit = stringResource(R.string.profile_unit_kg),
-            value = profile.weightKg ?: ProfileWeightMinKg,
-            min = ProfileWeightMinKg,
-            max = ProfileWeightMaxKg,
-            description = stringResource(R.string.profile_weight_a11y),
-            onSave = { kg ->
-                container.setProfileWeightKg(kg)
+            unit = stringResource(if (weightLb) R.string.onboarding_unit_lb else R.string.profile_unit_kg),
+            value = profile.weightKg?.let { if (weightLb) kgToLb(it) else it }
+                ?: if (weightLb) kgToLb(ProfileWeightMinKg) else ProfileWeightMinKg,
+            min = if (weightLb) kgToLb(ProfileWeightMinKg) else ProfileWeightMinKg,
+            max = if (weightLb) kgToLb(ProfileWeightMaxKg) else ProfileWeightMaxKg,
+            majorEvery = ProfileMeasureMajorEvery,
+            description = stringResource(
+                if (weightLb) R.string.onboarding_weight_lb_a11y else R.string.profile_weight_a11y,
+            ),
+            onSave = { shown ->
+                container.setProfileWeightKg(if (weightLb) lbToKg(shown) else shown)
                 editing = null
             },
             onCancel = { editing = null },
         )
         EditHeight -> MeasureEditor(
             title = stringResource(R.string.profile_height),
-            unit = stringResource(R.string.profile_unit_cm),
-            value = profile.heightCm ?: ProfileHeightMinCm,
-            min = ProfileHeightMinCm,
-            max = ProfileHeightMaxCm,
-            description = stringResource(R.string.profile_height_a11y),
-            onSave = { cm ->
-                container.setProfileHeightCm(cm)
+            unit = stringResource(if (heightIn) R.string.onboarding_unit_in else R.string.profile_unit_cm),
+            value = profile.heightCm?.let { if (heightIn) cmToIn(it) else it }
+                ?: if (heightIn) cmToIn(ProfileHeightMinCm) else ProfileHeightMinCm,
+            min = if (heightIn) cmToIn(ProfileHeightMinCm) else ProfileHeightMinCm,
+            max = if (heightIn) cmToIn(ProfileHeightMaxCm) else ProfileHeightMaxCm,
+            majorEvery = if (heightIn) InchMajorEvery else ProfileMeasureMajorEvery,
+            description = stringResource(
+                if (heightIn) R.string.onboarding_height_in_a11y else R.string.profile_height_a11y,
+            ),
+            onSave = { shown ->
+                container.setProfileHeightCm(if (heightIn) inchesToCm(shown) else shown)
                 editing = null
             },
             onCancel = { editing = null },
         )
         else -> ProfileList(
             profile = profile,
+            weightLb = weightLb,
+            heightIn = heightIn,
             onBack = onBack,
             onName = { editing = EditName },
             onWeight = { editing = EditWeight },
@@ -123,6 +144,8 @@ fun ProfileScreen(container: AppContainer, onBack: () -> Unit) {
 @Composable
 private fun ProfileList(
     profile: Profile,
+    weightLb: Boolean,
+    heightIn: Boolean,
     onBack: () -> Unit,
     onName: () -> Unit,
     onWeight: () -> Unit,
@@ -135,7 +158,7 @@ private fun ProfileList(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(spacing.screen),
+            .submenuPadding(),
         verticalArrangement = Arrangement.spacedBy(spacing.stack),
     ) {
         ProfileTitle(stringResource(R.string.menu_profile), onBack)
@@ -147,12 +170,18 @@ private fun ProfileList(
             )
             SteplyListRow(
                 label = stringResource(R.string.profile_weight),
-                value = profile.weightKg?.let { stringResource(R.string.profile_weight_value, it) } ?: notSet,
+                value = profile.weightKg?.let { kg ->
+                    if (weightLb) stringResource(R.string.profile_weight_value_lb, kgToLb(kg))
+                    else stringResource(R.string.profile_weight_value, kg)
+                } ?: notSet,
                 onClick = onWeight,
             )
             SteplyListRow(
                 label = stringResource(R.string.profile_height),
-                value = profile.heightCm?.let { stringResource(R.string.profile_height_value, it) } ?: notSet,
+                value = profile.heightCm?.let { cm ->
+                    if (heightIn) stringResource(R.string.profile_height_value_in, cmToIn(cm))
+                    else stringResource(R.string.profile_height_value, cm)
+                } ?: notSet,
                 onClick = onHeight,
             )
         }
@@ -176,7 +205,7 @@ private fun NameEditor(
             .fillMaxSize()
             .imePadding()
             .verticalScroll(rememberScrollState())
-            .padding(spacing.screen),
+            .submenuPadding(),
     ) {
         ProfileTitle(title, onCancel)
         BasicTextField(
@@ -227,6 +256,7 @@ private fun MeasureEditor(
     value: Int,
     min: Int,
     max: Int,
+    majorEvery: Int,
     description: String,
     onSave: (Int) -> Unit,
     onCancel: () -> Unit,
@@ -238,7 +268,7 @@ private fun MeasureEditor(
             .fillMaxSize()
             .imePadding()
             .verticalScroll(rememberScrollState())
-            .padding(SteplyTheme.spacing.screen),
+            .submenuPadding(),
     ) {
         ProfileTitle(title, onCancel)
         SteplyRuler(
@@ -247,7 +277,7 @@ private fun MeasureEditor(
             min = min,
             max = max,
             step = ProfileMeasureStep,
-            majorEvery = ProfileMeasureMajorEvery,
+            majorEvery = majorEvery,
             unitLabel = unit,
             contentDescription = description,
             inputContentDescription = description,

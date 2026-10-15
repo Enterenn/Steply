@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -23,7 +24,12 @@ import io.github.enterenn.steply.ui.theme.SteplyTheme
 private const val CaretRightGlyph = "\uE13A"
 
 @Composable
-fun MenuScreen(onAbout: () -> Unit, onProfile: () -> Unit, onData: () -> Unit) {
+fun MenuScreen(
+    onAbout: () -> Unit,
+    onProfile: () -> Unit,
+    onData: () -> Unit,
+    onSettings: () -> Unit,
+) {
     val spacing = SteplyTheme.spacing
     Column(
         modifier = Modifier
@@ -47,6 +53,7 @@ fun MenuScreen(onAbout: () -> Unit, onProfile: () -> Unit, onData: () -> Unit) {
             title = R.string.menu_group_other,
             rows = listOf(R.string.menu_settings, R.string.menu_about),
             onAbout = onAbout,
+            onSettings = onSettings,
         )
     }
 }
@@ -58,6 +65,7 @@ private fun MenuGroup(
     onAbout: () -> Unit = {},
     onProfile: () -> Unit = {},
     onData: () -> Unit = {},
+    onSettings: () -> Unit = {},
 ) {
     val spacing = SteplyTheme.spacing
     SteplyCard(contentPadding = PaddingValues(0.dp)) {
@@ -81,9 +89,26 @@ private fun MenuGroup(
                     R.string.menu_about -> onAbout
                     R.string.menu_profile -> onProfile
                     R.string.menu_data -> onData
+                    R.string.menu_settings -> onSettings
                     else -> ({ })
                 },
             )
         }
     }
+}
+
+private val SubmenuBackTarget = 48.dp
+
+/** Marge haute réduite : le titre reste sur la ligne de Steps, Trends et Menu. */
+@Composable
+internal fun Modifier.submenuPadding(): Modifier {
+    val spacing = SteplyTheme.spacing
+    val line = with(LocalDensity.current) { SteplyTheme.typography.body.lineHeight.toDp() }
+    val lift = ((SubmenuBackTarget - line) / 2).coerceAtLeast(0.dp)
+    return padding(
+        start = spacing.screen,
+        top = (spacing.screen - lift).coerceAtLeast(0.dp),
+        end = spacing.screen,
+        bottom = spacing.screen,
+    )
 }

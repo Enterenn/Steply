@@ -78,7 +78,13 @@ import io.github.enterenn.steply.data.steps.ProfileHeightMinCm
 import io.github.enterenn.steply.data.steps.ProfileMeasureMajorEvery
 import io.github.enterenn.steply.data.steps.ProfileMeasureStep
 import io.github.enterenn.steply.data.steps.ProfileWeightMaxKg
+import io.github.enterenn.steply.data.steps.HeightUnit
 import io.github.enterenn.steply.data.steps.ProfileWeightMinKg
+import io.github.enterenn.steply.data.steps.WeightUnit
+import io.github.enterenn.steply.data.steps.cmToIn
+import io.github.enterenn.steply.data.steps.inchesToCm
+import io.github.enterenn.steply.data.steps.kgToLb
+import io.github.enterenn.steply.data.steps.lbToKg
 import io.github.enterenn.steply.ui.components.SteplyCard
 import io.github.enterenn.steply.ui.components.pressBounce
 import io.github.enterenn.steply.ui.components.SteplyRuler
@@ -97,8 +103,6 @@ private val UnitSegmentWidth = 100.dp
 private const val StepCount = 3
 private const val WeightStartKg = 70
 private const val HeightStartCm = 170
-private const val LbPerKg = 2.2046226218
-private const val CmPerInch = 2.54
 private const val InchMajorEvery = 12
 
 @Composable
@@ -134,13 +138,35 @@ fun OnboardingScreen(container: AppContainer) {
     var heightIn by rememberSaveable { mutableStateOf(false) }
     var heightEdited by rememberSaveable { mutableStateOf(false) }
     var heightShown by rememberSaveable { mutableIntStateOf(HeightStartCm) }
-    LaunchedEffect(profile.weightKg) {
-        val saved = profile.weightKg ?: return@LaunchedEffect
-        if (!weightEdited) weightShown = if (weightLb) kgToLb(saved) else saved
+    var unitsReady by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (unitsReady) return@LaunchedEffect
+        val current = container.currentSettings()
+        if (!weightEdited) {
+            val useLb = current.weight == WeightUnit.Lb
+            weightLb = useLb
+            if (profile.weightKg == null) {
+                weightShown = if (useLb) kgToLb(WeightStartKg) else WeightStartKg
+            }
+        }
+        if (!heightEdited) {
+            val useIn = current.height == HeightUnit.In
+            heightIn = useIn
+            if (profile.heightCm == null) {
+                heightShown = if (useIn) cmToIn(HeightStartCm) else HeightStartCm
+            }
+        }
+        unitsReady = true
     }
-    LaunchedEffect(profile.heightCm) {
+    LaunchedEffect(unitsReady, profile.weightKg, weightLb) {
+        if (!unitsReady || weightEdited) return@LaunchedEffect
+        val saved = profile.weightKg ?: return@LaunchedEffect
+        weightShown = if (weightLb) kgToLb(saved) else saved
+    }
+    LaunchedEffect(unitsReady, profile.heightCm, heightIn) {
+        if (!unitsReady || heightEdited) return@LaunchedEffect
         val saved = profile.heightCm ?: return@LaunchedEffect
-        if (!heightEdited) heightShown = if (heightIn) cmToIn(saved) else saved
+        heightShown = if (heightIn) cmToIn(saved) else saved
     }
     val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !granted
     val requestPermission = {
@@ -674,18 +700,3 @@ private fun openAppSettings(context: Context) {
     context.startActivity(intent)
 }
 
-private fun kgToLb(kg: Int): Int = (kg * LbPerKg).roundToInt()
-    .coerceIn(kgToLbRaw(ProfileWeightMinKg), kgToLbRaw(ProfileWeightMaxKg))
-
-private fun kgToLbRaw(kg: Int): Int = (kg * LbPerKg).roundToInt()
-
-private fun lbToKg(lb: Int): Int = (lb / LbPerKg).roundToInt()
-    .coerceIn(ProfileWeightMinKg, ProfileWeightMaxKg)
-
-private fun cmToIn(cm: Int): Int = (cm / CmPerInch).roundToInt()
-    .coerceIn(cmToInRaw(ProfileHeightMinCm), cmToInRaw(ProfileHeightMaxCm))
-
-private fun cmToInRaw(cm: Int): Int = (cm / CmPerInch).roundToInt()
-
-private fun inchesToCm(inches: Int): Int = (inches * CmPerInch).roundToInt()
-    .coerceIn(ProfileHeightMinCm, ProfileHeightMaxCm)

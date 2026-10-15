@@ -57,6 +57,7 @@ import io.github.enterenn.steply.ui.menu.AboutScreen
 import io.github.enterenn.steply.ui.menu.DataScreen
 import io.github.enterenn.steply.ui.menu.MenuScreen
 import io.github.enterenn.steply.ui.menu.ProfileScreen
+import io.github.enterenn.steply.ui.menu.SettingsScreen
 import io.github.enterenn.steply.ui.onboarding.OnboardingScreen
 import io.github.enterenn.steply.ui.steps.GoalEditorSheet
 import io.github.enterenn.steply.ui.steps.StepsScreen
@@ -74,7 +75,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.tan
 
-private enum class MenuDestination { Menu, About, Profile, Data }
+private enum class MenuDestination { Menu, About, Profile, Data, Settings }
 
 private enum class Tab(@StringRes val label: Int, val glyph: String) {
     Steps(R.string.tab_steps, "\uED60"),
@@ -131,10 +132,15 @@ fun SteplyApp(container: AppContainer) {
                             container = container,
                             onBack = { menuDestination = MenuDestination.Menu },
                         )
+                        MenuDestination.Settings -> SettingsScreen(
+                            container = container,
+                            onBack = { menuDestination = MenuDestination.Menu },
+                        )
                         MenuDestination.Menu -> MenuScreen(
                             onAbout = { menuDestination = MenuDestination.About },
                             onProfile = { menuDestination = MenuDestination.Profile },
                             onData = { menuDestination = MenuDestination.Data },
+                            onSettings = { menuDestination = MenuDestination.Settings },
                         )
                     }
                 }
