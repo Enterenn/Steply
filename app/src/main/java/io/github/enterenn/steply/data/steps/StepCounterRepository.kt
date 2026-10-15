@@ -92,6 +92,8 @@ class StepCounterRepository(
         }
     }
 
+    suspend fun readingCount(): Long = dao.count()
+
     private suspend fun writeCumulative(cumulativeSteps: Long) {
         val latest = dao.latestTwo().firstOrNull()
         if (latest?.cumulativeSteps == cumulativeSteps) return

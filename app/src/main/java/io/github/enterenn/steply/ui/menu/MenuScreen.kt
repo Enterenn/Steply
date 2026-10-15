@@ -23,7 +23,7 @@ import io.github.enterenn.steply.ui.theme.SteplyTheme
 private const val CaretRightGlyph = "\uE13A"
 
 @Composable
-fun MenuScreen(onAbout: () -> Unit, onProfile: () -> Unit) {
+fun MenuScreen(onAbout: () -> Unit, onProfile: () -> Unit, onData: () -> Unit) {
     val spacing = SteplyTheme.spacing
     Column(
         modifier = Modifier
@@ -41,6 +41,7 @@ fun MenuScreen(onAbout: () -> Unit, onProfile: () -> Unit) {
             title = R.string.menu_group_information,
             rows = listOf(R.string.menu_profile, R.string.menu_data),
             onProfile = onProfile,
+            onData = onData,
         )
         MenuGroup(
             title = R.string.menu_group_other,
@@ -56,6 +57,7 @@ private fun MenuGroup(
     rows: List<Int>,
     onAbout: () -> Unit = {},
     onProfile: () -> Unit = {},
+    onData: () -> Unit = {},
 ) {
     val spacing = SteplyTheme.spacing
     SteplyCard(contentPadding = PaddingValues(0.dp)) {
@@ -78,6 +80,7 @@ private fun MenuGroup(
                 onClick = when (row) {
                     R.string.menu_about -> onAbout
                     R.string.menu_profile -> onProfile
+                    R.string.menu_data -> onData
                     else -> ({ })
                 },
             )

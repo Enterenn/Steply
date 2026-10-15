@@ -94,4 +94,13 @@
     <string name="profile_save">Save</string>
     <string name="profile_cancel">Cancel</string>
     <string name="profile_back">Back</string>
+    <string name="data_back">Back</string>
+    <string name="data_background">Background</string>
+    <string name="data_footprint">Footprint</string>
+    <string name="data_state_off">Activity recognition is off</string>
+    <string name="data_state_collecting">Collecting</string>
+    <string name="data_last_reading_line">Last reading · %1$s</string>
+    <string name="data_readings">Readings</string>
+    <string name="data_database">Database</string>
+    <string name="data_not_set">Not set</string>
 </resources>

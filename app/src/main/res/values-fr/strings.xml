@@ -92,4 +92,13 @@
     <string name="profile_save">Enregistrer</string>
     <string name="profile_cancel">Annuler</string>
     <string name="profile_back">Retour</string>
+    <string name="data_back">Retour</string>
+    <string name="data_background">Arrière-plan</string>
+    <string name="data_footprint">Empreinte</string>
+    <string name="data_state_off">Reconnaissance d\'activité coupée</string>
+    <string name="data_state_collecting">En collecte</string>
+    <string name="data_last_reading_line">Dernière lecture · %1$s</string>
+    <string name="data_readings">Relevés</string>
+    <string name="data_database">Base</string>
+    <string name="data_not_set">Non renseigné</string>
 </resources>
