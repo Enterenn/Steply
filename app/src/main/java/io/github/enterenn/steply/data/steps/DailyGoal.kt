@@ -15,3 +15,9 @@ fun resolveDailyGoal(stored: Int?): Int {
     val index = ((clamped - DailyGoalMin).toFloat() / DailyGoalStep).roundToInt()
     return (DailyGoalMin + index * DailyGoalStep).coerceIn(DailyGoalMin, DailyGoalMax)
 }
+
+/** Une baisse sous les pas déjà faits aujourd'hui est refusée. */
+fun acceptsDailyGoalChange(current: Int, proposed: Int, stepsToday: Long): Boolean {
+    if (proposed >= current) return true
+    return proposed.toLong() >= stepsToday.coerceAtLeast(0L)
+}

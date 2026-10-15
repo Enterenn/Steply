@@ -18,7 +18,9 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -57,6 +59,7 @@ import io.github.enterenn.steply.ui.steps.StepsScreen
 import io.github.enterenn.steply.ui.components.pressBounce
 import io.github.enterenn.steply.ui.theme.SteplyTheme
 import io.github.enterenn.steply.ui.trends.TrendsScreen
+import java.time.LocalDate
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.acos
@@ -78,6 +81,15 @@ fun SteplyApp(container: AppContainer) {
     var selected by rememberSaveable { mutableStateOf(Tab.Steps) }
     var editingGoal by rememberSaveable { mutableStateOf(false) }
     val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
+    val readings by container.stepReadings.collectAsState()
+    var stepsToday by remember { mutableLongStateOf(Long.MAX_VALUE) }
+    LaunchedEffect(editingGoal, readings) {
+        stepsToday = if (editingGoal) {
+            container.stepCounterRepository.stepsOn(LocalDate.now())
+        } else {
+            Long.MAX_VALUE
+        }
+    }
     val colors = SteplyTheme.colors
 
     Box(Modifier.fillMaxSize()) {
@@ -108,6 +120,7 @@ fun SteplyApp(container: AppContainer) {
         if (editingGoal) {
             GoalEditorSheet(
                 goal = goal,
+                stepsToday = stepsToday,
                 onSave = { value ->
                     container.setDailyGoal(value)
                     editingGoal = false

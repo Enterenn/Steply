@@ -81,6 +81,7 @@ import io.github.enterenn.steply.data.steps.daysReachingGoal
 import io.github.enterenn.steply.data.steps.derivedActivity
 import io.github.enterenn.steply.data.steps.DailyGoalMax
 import io.github.enterenn.steply.data.steps.DailyGoalMin
+import io.github.enterenn.steply.data.steps.acceptsDailyGoalChange
 import io.github.enterenn.steply.data.steps.resolveDailyGoal
 import io.github.enterenn.steply.ui.components.SteplyCard
 import io.github.enterenn.steply.ui.components.SteplyDayPill
@@ -263,17 +264,21 @@ private fun StepsProgressCard(
 @Composable
 internal fun GoalEditorSheet(
     goal: Int,
+    stepsToday: Long,
     onSave: (Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var draft by remember { mutableStateOf(goal.toString()) }
     val parsed = draft.toIntOrNull()
     val valid = parsed != null && parsed in DailyGoalMin..DailyGoalMax
+    val resolved = if (valid) resolveDailyGoal(parsed) else null
     val outOfRange = parsed != null && (
         parsed > DailyGoalMax ||
             (parsed < DailyGoalMin && draft.length >= DailyGoalMin.toString().length)
         )
-    val canSave = valid && parsed != goal
+    val belowToday = resolved != null &&
+        !acceptsDailyGoalChange(goal, resolved, stepsToday)
+    val canSave = resolved != null && resolved != goal && !belowToday
     val colors = SteplyTheme.colors
     val spacing = SteplyTheme.spacing
     val inputDescription = stringResource(R.string.steps_goal_input_a11y)
@@ -342,7 +347,7 @@ internal fun GoalEditorSheet(
                                 .fillMaxSize()
                                 .border(
                                     GoalFieldStroke,
-                                    if (outOfRange) colors.error else colors.gray,
+                                    if (outOfRange || belowToday) colors.error else colors.gray,
                                     RoundedCornerShape(SteplyTheme.radius.control),
                                 )
                                 .padding(horizontal = spacing.card),
@@ -352,9 +357,11 @@ internal fun GoalEditorSheet(
                         }
                     },
                 )
-                if (outOfRange) {
+                if (outOfRange || belowToday) {
                     BasicText(
-                        text = stringResource(R.string.steps_goal_error),
+                        text = stringResource(
+                            if (outOfRange) R.string.steps_goal_error else R.string.steps_goal_below_today,
+                        ),
                         modifier = Modifier.padding(top = spacing.inline),
                         style = SteplyTheme.typography.caption.copy(color = colors.error),
                     )

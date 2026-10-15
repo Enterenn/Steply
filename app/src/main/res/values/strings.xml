@@ -41,6 +41,7 @@
     <string name="steps_goal_save">Save</string>
     <string name="steps_goal_cancel">Cancel</string>
     <string name="steps_goal_error">Enter a value between 1 000 and 30 000.</string>
+    <string name="steps_goal_below_today">This goal is below the steps already taken today.</string>
     <string name="steps_goal_input_a11y">Step goal</string>
     <string name="steps_stat_kcal">%1$s Kcal</string>
     <string name="steps_stat_distance">%1$s Km</string>
@@ -55,6 +56,7 @@
     <string name="trends_period_12">12 months</string>
     <string name="trends_range_12">Nov 2025 – Oct 2026</string>
     <string name="trends_chart_days_a11y">Steps over %1$d days. Goal %2$s. %3$s.</string>
+    <string name="trends_chart_days_goals_a11y">Steps over %1$d days. Goals %2$s. %3$s.</string>
     <string name="trends_chart_12_a11y">Steps over 12 months, November 2025 to October 2026. November 0, December 0, January 0, February 0, March 0, April 0, May 0, June 2 400, July 3 400, August 4 200, September 4 000, October 3 600.</string>
     <string name="trends_summary_title">This period</string>
     <string name="trends_peak_label">Peak day</string>

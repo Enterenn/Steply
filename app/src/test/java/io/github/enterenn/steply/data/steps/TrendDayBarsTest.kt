@@ -59,6 +59,25 @@ class TrendDayBarsTest {
         assertEquals(15L, bars.last().steps)
     }
 
+    @Test
+    fun oneGoalSetsTheAxis() {
+        val goals = listOf(8_000)
+        assertEquals(8_400, trendChartMax(4_000L, goals))
+        assertEquals(listOf(0, 8_000), trendAxisTickValues(8_400, goals))
+    }
+
+    @Test
+    fun twoGoalsAddATickForEach() {
+        val goals = listOf(5_000, 8_000)
+        assertEquals(13_000, trendChartMax(12_000L, goals))
+        assertEquals(listOf(0, 5_000, 8_000, 13_000), trendAxisTickValues(13_000, goals))
+    }
+
+    @Test
+    fun goalAboveTheAxisTopIsNotATick() {
+        assertEquals(listOf(0), trendAxisTickValues(8_000, listOf(10_000)))
+    }
+
     private fun reading(cumulative: Long, instant: String) =
         StepReading(cumulative, Instant.parse(instant))
 }

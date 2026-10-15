@@ -4,8 +4,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.ceil
 
-const val TrendGoalSteps = 10_000
-
 data class TrendDayBar(
     val day: LocalDate,
     val steps: Long,
@@ -55,12 +53,13 @@ fun lowTrendDay(bars: List<TrendDayBar>): TrendDayBar? =
         ?.value
 
 /**
- * L'axe dépasse l'objectif et le jour le plus haut, pour que la ligne
- * et la barre ne collent pas au bord. Si un jour dépasse 10 000, le sommet
+ * L'axe dépasse le plus haut objectif et le jour le plus haut, pour que la ligne
+ * et la barre ne collent pas au bord. Si un jour dépasse cet objectif, le sommet
  * est arrondi au millier supérieur afin que le libellé tienne dans l'axe.
  */
-fun trendChartMax(peakSteps: Long, goal: Int = TrendGoalSteps): Int {
+fun trendChartMax(peakSteps: Long, goals: List<Int>): Int {
     val peak = peakSteps.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+    val goal = goals.maxOrNull()?.coerceAtLeast(0) ?: 0
     val base = maxOf(peak, goal)
     val padded = ceilDiv(base.toLong() * (100 + ChartHeadroomPercent), 100L)
     if (peak <= goal) return padded.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
@@ -68,12 +67,13 @@ fun trendChartMax(peakSteps: Long, goal: Int = TrendGoalSteps): Int {
     return rounded.coerceIn(padded, Int.MAX_VALUE.toLong()).toInt()
 }
 
-fun trendAxisTickValues(maxValue: Int, goal: Int = TrendGoalSteps): List<Int> {
+fun trendAxisTickValues(maxValue: Int, goals: List<Int>): List<Int> {
     if (maxValue <= 0) return listOf(0)
     val ticks = mutableListOf(0)
-    if (goal in 1 until maxValue) ticks += goal
-    val gap = (maxValue - goal).toFloat() / maxValue.toFloat()
-    if (maxValue > goal && gap >= AxisTickMinGap) ticks += maxValue
+    ticks += goals.filter { it in 1 until maxValue }.distinct().sorted()
+    val highestGoal = goals.maxOrNull() ?: 0
+    val gap = (maxValue - highestGoal).toFloat() / maxValue.toFloat()
+    if (maxValue > highestGoal && gap >= AxisTickMinGap) ticks += maxValue
     return ticks
 }
 
