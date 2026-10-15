@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.ui.theme.SteplyTheme
+import io.github.enterenn.steply.ui.theme.SteplyTokens
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -74,7 +75,9 @@ private const val RestScale = 1f
 enum class SteplyPillButtonStyle {
     Primary,
     Secondary,
+    Destructive,
     DestructiveText,
+    Text,
 }
 
 @Composable
@@ -290,12 +293,16 @@ fun SteplyPillButton(
     val background = when (style) {
         SteplyPillButtonStyle.Primary -> colors.accentFill
         SteplyPillButtonStyle.Secondary -> colors.lightGray
+        SteplyPillButtonStyle.Destructive -> colors.error
         SteplyPillButtonStyle.DestructiveText -> null
+        SteplyPillButtonStyle.Text -> null
     }
     val contentColor = when (style) {
         SteplyPillButtonStyle.Primary -> colors.onAccentFill
         SteplyPillButtonStyle.Secondary -> colors.text
+        SteplyPillButtonStyle.Destructive -> SteplyTokens.onAccentFillDark
         SteplyPillButtonStyle.DestructiveText -> colors.error
+        SteplyPillButtonStyle.Text -> colors.text
     }
     val interaction = remember { MutableInteractionSource() }
     val shape = RoundedCornerShape(SteplyTheme.radius.button)

@@ -94,6 +94,56 @@ class StepCounterRepository(
 
     suspend fun readingCount(): Long = dao.count()
 
+    suspend fun exportCsv(): String = gate.withLock {
+        writeStepCsv(storedReadings())
+    }
+
+    suspend fun importCsv(content: String): StepCsvParse = gate.withLock {
+        val parsed = parseStepCsv(content)
+        if (parsed is StepCsvParse.Accepted) {
+            val now = Instant.now()
+            val hardware = lastLiveCumulative ?: _state.value.snapshot?.cumulativeSteps
+            val zone = ZoneId.systemDefault().rules.getOffset(now).toStoredOffset()
+            storeReadings(anchorReadings(parsed.readings, hardware, now, zone))
+        }
+        parsed
+    }
+
+    suspend fun purgeSteps() = gate.withLock {
+        dao.purgeSteps()
+        cacheLock.withLock {
+            cachedReadings.clear()
+            cacheLoaded = true
+        }
+        publishLatest()
+    }
+
+    private suspend fun storedReadings(): List<CsvReading> = dao.allById().map { reading ->
+        CsvReading(
+            cumulativeSteps = reading.cumulativeSteps,
+            recordedAt = Instant.parse(reading.recordedAt),
+            zoneOffset = reading.zoneOffset,
+        )
+    }
+
+    private suspend fun storeReadings(readings: List<CsvReading>) {
+        dao.replaceAll(
+            readings.map { reading ->
+                StepCounterReadingEntity(
+                    cumulativeSteps = reading.cumulativeSteps,
+                    recordedAt = reading.recordedAt.toString(),
+                    zoneOffset = reading.zoneOffset,
+                )
+            },
+        )
+        cacheLock.withLock {
+            cachedReadings.clear()
+            cachedReadings += readings.map { StepReading(it.cumulativeSteps, it.recordedAt) }
+            cacheLoaded = true
+        }
+        publishLatest()
+    }
+
     private suspend fun writeCumulative(cumulativeSteps: Long) {
         val latest = dao.latestTwo().firstOrNull()
         if (latest?.cumulativeSteps == cumulativeSteps) return
