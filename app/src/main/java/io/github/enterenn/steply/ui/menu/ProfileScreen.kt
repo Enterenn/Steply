@@ -158,7 +158,7 @@ private fun ProfileList(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(spacing.screen),
+            .submenuPadding(),
         verticalArrangement = Arrangement.spacedBy(spacing.stack),
     ) {
         ProfileTitle(stringResource(R.string.menu_profile), onBack)
@@ -205,7 +205,7 @@ private fun NameEditor(
             .fillMaxSize()
             .imePadding()
             .verticalScroll(rememberScrollState())
-            .padding(spacing.screen),
+            .submenuPadding(),
     ) {
         ProfileTitle(title, onCancel)
         BasicTextField(
@@ -268,7 +268,7 @@ private fun MeasureEditor(
             .fillMaxSize()
             .imePadding()
             .verticalScroll(rememberScrollState())
-            .padding(SteplyTheme.spacing.screen),
+            .submenuPadding(),
     ) {
         ProfileTitle(title, onCancel)
         SteplyRuler(

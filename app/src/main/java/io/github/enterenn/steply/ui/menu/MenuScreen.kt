@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -94,4 +95,20 @@ private fun MenuGroup(
             )
         }
     }
+}
+
+private val SubmenuBackTarget = 48.dp
+
+/** Marge haute réduite : le titre reste sur la ligne de Steps, Trends et Menu. */
+@Composable
+internal fun Modifier.submenuPadding(): Modifier {
+    val spacing = SteplyTheme.spacing
+    val line = with(LocalDensity.current) { SteplyTheme.typography.body.lineHeight.toDp() }
+    val lift = ((SubmenuBackTarget - line) / 2).coerceAtLeast(0.dp)
+    return padding(
+        start = spacing.screen,
+        top = (spacing.screen - lift).coerceAtLeast(0.dp),
+        end = spacing.screen,
+        bottom = spacing.screen,
+    )
 }

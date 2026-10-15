@@ -108,7 +108,7 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(spacing.screen),
+                .submenuPadding(),
             verticalArrangement = Arrangement.spacedBy(spacing.stack),
         ) {
             SettingsTitle(onBack)
