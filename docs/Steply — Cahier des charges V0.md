@@ -8,7 +8,7 @@ Légende utilisée dans tout le document : **\[Décidé\]** = acté dans nos éc
 
 Steply est la nouvelle version, réécrite de zéro, de l'application précédemment nommée Astra (Flutter, v0.15.3, Phase 0 validée en beta le 2026-06-08). Trois raisons de repartir sur une base saine : le changement de nom, le recentrage sur les téléphones dégooglisés (si l'OS est opaque, la souveraineté des données ne peut pas être garantie), et le choix d'une technologie native mieux adaptée aux parties les plus fragiles de l'app (capteur, arrière-plan, base de données).
 
-**Promesse en une phrase \[Proposé\]** : *Steply, le compteur de pas local, sans compte et exportable, pour téléphones dégooglisés.* (Reprise de l'accroche historique : « le compteur de pas qui fonctionne en mode avion ».)
+**Promesse en une phrase \[Proposé\]** : *Steply, le compteur de pas local, sans compte et exportable, pour téléphones dégooglisés.*
 
 **Nature du projet** : POC soigné, pas un produit industriel. L'objectif est un résultat crédible, sobre et fini, sans l'aspect « AI slop » : périmètre serré, design maison, code lisible, comportements vérifiables.
 
@@ -28,7 +28,7 @@ Steply est la nouvelle version, réécrite de zéro, de l'application précédem
 
 Repris d'Astra, ajustés :
 
-1. **La preuve plutôt que la promesse** : mode avion, export, purge, empreinte de stockage sont des comportements vérifiables, pas des slogans. Corollaire : aucune formulation (README, description du dépôt, écran About) ne doit affirmer plus que ce que l'app fait réellement (ex. ne pas écrire « chiffré » tant que ce n'est pas le cas).
+1. **La preuve plutôt que la promesse** : export, purge et empreinte de stockage sont des comportements vérifiables, pas des slogans. Corollaire : aucune formulation (README, description du dépôt, écran About) ne doit affirmer plus que ce que l'app fait réellement (ex. ne pas écrire « chiffré » tant que ce n'est pas le cas).
 2. **Local d'abord** : l'appareil est la source de vérité.
 3. **Aucun compte obligatoire.**
 4. **UX calme** : pas de honte liée aux séries, pas d'optimisation de l'engagement.
@@ -47,7 +47,7 @@ Repris d'Astra, ajustés :
 - Comptage de pas via le capteur matériel du téléphone
 - Collecte en arrière-plan, sans dépendance aux services Google
 - Stockage local (Room / SQLite) avec cycle de vie borné (sous-échantillonnage, maintenance)
-- Trois onglets : **Steps**, **Trends**, **Menu** (Profil, My Data, Réglages, À propos)
+- Trois onglets : **Steps**, **Trends**, **Menu** (Profil, My Data, Réglages, Help, À propos)
 - Onboarding orienté confiance : permission d'activité, poids et taille facultatifs
 - Objectif quotidien (8 000 par défaut) avec historique, modifiable depuis Steps
 - Métriques dérivées calculées dans l'UI : distance, durée de marche, kcal
@@ -91,8 +91,8 @@ Le bracelet propriétaire, le firmware, le PCB et la certification n'ont pas leu
 
 ### 5.4 Menu
 
-- **F-30** Liste groupée : Informations (Profil, Data, *Achievements ?*), Autres (Réglages, *Help ?*, À propos).
-- **F-31** *\[À trancher\]* « Achievements » et « Help » : définir leur contenu ou les retirer de la V0. Si conservés, les Achievements sont de simples repères factuels, sans mécanique de récompense.
+- **F-30** Liste groupée : Informations (Profil, Data), Autres (Réglages, Help, À propos). Pas d'Achievements.
+- **F-31** **\[Décidé\]** Pas d'Achievements. Help est une page de FAQ pour aider à l'utilisation de l'app.
 - **F-32** Corriger l'en-tête du menu du Figma (il affiche « My Data »).
 
 ### 5.5 Profil
@@ -288,9 +288,9 @@ Export des variables Figma en JSON, génération du code des tokens par script (
 | M2 Design system | Thème, 12 palettes, composants de base, captures de référence | Galerie de composants |
 | M3 Collecte et stockage | Lecteur, normaliseur, Room, cycle de vie | Pipeline testé |
 | M4 Écrans principaux | Steps, Trends | Écrans fidèles au Figma |
-| M5 Menu et réglages | Onboarding, Profil, My Data, Réglages, À propos | Parcours complet |
+| M5 Menu et réglages | Onboarding, Profil, My Data, Réglages, Help, À propos | Parcours complet |
 | M6 Export, i18n | CSV, import, purge, FR/EN complet | Fonctions de souveraineté |
-| M7 Beta | Protocole mode avion, checklist, F-Droid | Version 0.1.0 publiée |
+| M7 Beta | Checklist, F-Droid | Version 0.1.0 publiée |
 
 Pas de dates à ce stade : l'ordre compte plus que le calendrier pour un projet solo.
 
@@ -302,7 +302,7 @@ Pas de dates à ce stade : l'ordre compte plus que le calendrier pour un projet 
 | Modèle de données (UTC + `zone_offset`, intervalles) | Verrouillage de base entre isolates |
 | Format CSV export/import | Compaction et baselines si trop complexes |
 | Leçons des bugs corrigés (redémarrage, minuit, transactions atomiques, import non fiable) | iOS |
-| Protocole mode avion, FR/EN (conversion des fichiers ARB en `strings.xml` par script) | Roadmap matérielle dans le README |
+| FR/EN (conversion des fichiers ARB en `strings.xml` par script) | Roadmap matérielle dans le README |
 
 Disponibilité du nom : le nom Steply n'a pas été vérifié ici. À contrôler avant de figer l'identifiant : F-Droid, GitHub, bases de marques (INPI / EUIPO).
 
@@ -310,7 +310,6 @@ Disponibilité du nom : le nom Steply n'a pas été vérifié ici. À contrôler
 
 | # | Question | Impact |
 | --- | --- | --- |
-| 1 | Achievements et Help : contenu ou retrait ? | Menu, F-30/F-31 |
 | 2 | Compteur « 3/7 » sur Steps : garder ou retirer ? | F-14, cohérence « sans gamification » |
 | 3 | Vue 12 mois dans Trends ? | F-21, cadre Figma à créer |
 | 4 | Rouge et violet en clair : assombrir le fond ou texte gras et grand ? | Accessibilité des boutons |
