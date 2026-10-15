@@ -31,7 +31,7 @@
     <string name="gallery_stat_steps_unit">pas</string>
     <string name="gallery_stat_steps_caption">pas moyens par jour</string>
     <string name="steps_ring_label">Pas</string>
-    <string name="steps_ring_a11y">Pas, 3 750 sur 10 000</string>
+    <string name="steps_ring_a11y">Pas, %1$s sur %2$s</string>
     <string name="steps_set_goal">Définir l\'objectif</string>
     <string name="steps_stat_kcal">120 kcal</string>
     <string name="steps_stat_distance">1,57 km</string>

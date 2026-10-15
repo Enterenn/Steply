@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -80,6 +81,12 @@ fun StepsScreen(container: AppContainer) {
 
     val week = remember { currentWeek() }
     var selectedDay by rememberSaveable(key = "steps-week-day") { mutableIntStateOf(todayIndex()) }
+    val selectedDate = week[selectedDay].date
+    val readings by container.stepReadings.collectAsState()
+    var steps by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(selectedDate, readings) {
+        steps = container.stepCounterRepository.stepsOn(selectedDate)
+    }
     val spacing = SteplyTheme.spacing
     Column(
         modifier = Modifier
@@ -93,7 +100,7 @@ fun StepsScreen(container: AppContainer) {
             selectedIndex = selectedDay,
             onSelect = { selectedDay = it },
         )
-        StepsProgressCard()
+        StepsProgressCard(steps)
         DerivedStatsCard()
         if (!granted) {
             PermissionDeniedContent(
@@ -144,15 +151,20 @@ private fun WeekDayCard(
 }
 
 @Composable
-private fun StepsProgressCard() {
+private fun StepsProgressCard(steps: Long) {
+    val stepsText = formatStepCount(steps)
     SteplyCard {
         SteplyProgressRing(
             label = stringResource(R.string.steps_ring_label),
-            valueText = stringResource(R.string.steps_ring_value),
+            valueText = stepsText,
             goalText = stringResource(R.string.steps_ring_goal),
-            value = ExampleRingSteps,
+            value = steps.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt(),
             goal = ExampleRingGoal,
-            contentDescription = stringResource(R.string.steps_ring_a11y),
+            contentDescription = stringResource(
+                R.string.steps_ring_a11y,
+                stepsText,
+                formatStepCount(ExampleRingGoal.toLong()),
+            ),
         )
         Box(
             Modifier
@@ -285,6 +297,7 @@ private data class WeekDay(
     @StringRes val shortName: Int,
     @StringRes val fullName: Int,
     val number: String,
+    val date: LocalDate,
 )
 
 private fun currentWeek(today: LocalDate = LocalDate.now()): List<WeekDay> {
@@ -292,7 +305,7 @@ private fun currentWeek(today: LocalDate = LocalDate.now()): List<WeekDay> {
     return WeekOrder.map { day ->
         val (shortName, fullName) = dayLabels(day)
         val date = monday.plusDays((day.value - DayOfWeek.MONDAY.value).toLong())
-        WeekDay(shortName, fullName, date.dayOfMonth.toString())
+        WeekDay(shortName, fullName, date.dayOfMonth.toString(), date)
     }
 }
 
@@ -313,8 +326,12 @@ private val SetGoalButtonPadding = 8.dp
 private val StatGlyphSize = 20.sp
 private val StatRuleWidth = 1.dp
 
-private const val ExampleRingSteps = 3750
 private const val ExampleRingGoal = 10000
+
+private fun formatStepCount(steps: Long): String {
+    val digits = steps.coerceAtLeast(0L).toString()
+    return digits.reversed().chunked(3).joinToString(" ").reversed()
+}
 
 private const val FireGlyph = "\uE242"
 private const val PinGlyph = "\uE316"
