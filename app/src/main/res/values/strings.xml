@@ -31,9 +31,13 @@
     <string name="gallery_stat_steps_unit">steps</string>
     <string name="gallery_stat_steps_caption">average steps taken per day</string>
     <string name="steps_ring_label">Steps</string>
-    <string name="steps_ring_goal">/10 000</string>
     <string name="steps_ring_a11y">Steps, %1$s of %2$s</string>
     <string name="steps_set_goal">Set goal</string>
+    <string name="steps_goal_title">Daily step goal</string>
+    <string name="steps_goal_save">Save</string>
+    <string name="steps_goal_cancel">Cancel</string>
+    <string name="steps_goal_error">Enter a value between 1 000 and 30 000.</string>
+    <string name="steps_goal_input_a11y">Step goal</string>
     <string name="steps_stat_kcal">120 Kcal</string>
     <string name="steps_stat_distance">1.57 Km</string>
     <string name="steps_stat_duration">00:37:56</string>

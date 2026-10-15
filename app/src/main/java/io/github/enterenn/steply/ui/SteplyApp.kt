@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -49,7 +50,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
+import io.github.enterenn.steply.data.steps.DailyGoalDefault
 import io.github.enterenn.steply.ui.menu.MenuScreen
+import io.github.enterenn.steply.ui.steps.GoalEditorSheet
 import io.github.enterenn.steply.ui.steps.StepsScreen
 import io.github.enterenn.steply.ui.components.pressBounce
 import io.github.enterenn.steply.ui.theme.SteplyTheme
@@ -73,31 +76,45 @@ private enum class Tab(@StringRes val label: Int, val glyph: String) {
 @Composable
 fun SteplyApp(container: AppContainer) {
     var selected by rememberSaveable { mutableStateOf(Tab.Steps) }
+    var editingGoal by rememberSaveable { mutableStateOf(false) }
+    val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
     val colors = SteplyTheme.colors
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(colors.background)
-            .statusBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
+    Box(Modifier.fillMaxSize()) {
+        Column(
             Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .clipToBounds(),
+                .fillMaxSize()
+                .background(colors.background)
+                .statusBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            when (selected) {
-                Tab.Steps -> StepsScreen(container)
-                Tab.Trends -> TrendsScreen(container)
-                Tab.Menu -> MenuScreen()
+            Box(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clipToBounds(),
+            ) {
+                when (selected) {
+                    Tab.Steps -> StepsScreen(container, onEditGoal = { editingGoal = true })
+                    Tab.Trends -> TrendsScreen(container)
+                    Tab.Menu -> MenuScreen()
+                }
             }
+            TabBar(
+                selected = selected,
+                onSelect = { selected = it },
+            )
         }
-        TabBar(
-            selected = selected,
-            onSelect = { selected = it },
-        )
+        if (editingGoal) {
+            GoalEditorSheet(
+                goal = goal,
+                onSave = { value ->
+                    container.setDailyGoal(value)
+                    editingGoal = false
+                },
+                onDismiss = { editingGoal = false },
+            )
+        }
     }
 }
 
