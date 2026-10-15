@@ -1,6 +1,10 @@
 package io.github.enterenn.steply.ui.menu
 
+import android.content.Context
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -10,10 +14,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -21,10 +28,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -43,19 +54,26 @@ import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.data.db.AppDatabase
 import io.github.enterenn.steply.data.steps.CollectionHealth
+import io.github.enterenn.steply.data.steps.StepCsvParse
+import io.github.enterenn.steply.data.steps.StepCsvProblem
+import io.github.enterenn.steply.data.steps.StepCsvRowReason
 import io.github.enterenn.steply.data.steps.StepReadingsState
 import io.github.enterenn.steply.data.steps.collectionHealth
 import io.github.enterenn.steply.data.steps.formatStorageSize
 import io.github.enterenn.steply.data.steps.storageFileBytes
 import io.github.enterenn.steply.ui.components.SteplyCard
+import io.github.enterenn.steply.ui.components.SteplyPillButton
+import io.github.enterenn.steply.ui.components.SteplyPillButtonStyle
 import io.github.enterenn.steply.ui.theme.SteplyTheme
 import java.io.File
+import java.io.IOException
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private val PhosphorRegular = FontFamily(Font(R.font.phosphor_regular))
@@ -64,19 +82,34 @@ private val BackTarget = 48.dp
 private val StatusDot = 8.dp
 private val StatusDotNudge = 7.dp
 private val KpiGap = 4.dp
+private const val ScrimAlpha = 0.32f
+
+// Android mappe .csv sur text/comma-separated-values. text/csv seul rend le fichier non sélectionnable.
+private val CsvMimeTypes = arrayOf(
+    "text/csv",
+    "text/comma-separated-values",
+    "application/csv",
+    "text/plain",
+    "application/octet-stream",
+    "*/*",
+)
 
 @Composable
 fun DataScreen(container: AppContainer, onBack: () -> Unit) {
-    BackHandler(onBack = onBack)
     val granted by container.activityRecognitionGranted.collectAsState()
     val readings by container.stepReadings.collectAsState()
-    val context = LocalContext.current.applicationContext
+    val context = LocalContext.current
+    val appContext = context.applicationContext
     var readingCount by remember { mutableLongStateOf(0L) }
     var databaseBytes by remember { mutableLongStateOf(0L) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var fileFailed by remember { mutableStateOf(false) }
+    var problem by remember { mutableStateOf<StepCsvProblem?>(null) }
+    val scope = rememberCoroutineScope()
     LaunchedEffect(readings) {
         readingCount = container.stepCounterRepository.readingCount()
         databaseBytes = withContext(Dispatchers.IO) {
-            val db = context.getDatabasePath(AppDatabase.NAME)
+            val db = appContext.getDatabasePath(AppDatabase.NAME)
             storageFileBytes(
                 fileLength(db),
                 fileLength(File(db.path + "-wal")),
@@ -84,38 +117,188 @@ fun DataScreen(container: AppContainer, onBack: () -> Unit) {
             )
         }
     }
+    val exportFile = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv"),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val csv = container.stepCounterRepository.exportCsv()
+            val written = withContext(Dispatchers.IO) { writeCsv(context, uri, csv) }
+            if (written) {
+                fileFailed = false
+                problem = null
+            } else {
+                fileFailed = true
+            }
+        }
+    }
+    val importFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val text = withContext(Dispatchers.IO) { readCsv(context, uri) }
+            if (text == null) {
+                fileFailed = true
+                return@launch
+            }
+            when (val parsed = container.stepCounterRepository.importCsv(text)) {
+                is StepCsvParse.Accepted -> {
+                    fileFailed = false
+                    problem = null
+                }
+                is StepCsvParse.Rejected -> {
+                    fileFailed = false
+                    problem = parsed.problem
+                }
+            }
+        }
+    }
+    BackHandler {
+        if (confirmDelete) confirmDelete = false else onBack()
+    }
     val locales = LocalConfiguration.current.locales
     val locale = if (locales.isEmpty) Locale.getDefault() else locales[0]
     val spacing = SteplyTheme.spacing
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .submenuPadding(),
-        verticalArrangement = Arrangement.spacedBy(spacing.stack),
-    ) {
-        DataTitle(stringResource(R.string.menu_data), onBack)
-        DataCard(title = stringResource(R.string.data_background)) {
-            CollectionStateLine(granted, readings)
-            BasicText(
-                text = stringResource(
-                    R.string.data_last_reading_line,
-                    lastReadingText(readings.snapshot?.recordedAt),
-                ),
-                style = SteplyTheme.typography.caption.copy(
-                    color = SteplyTheme.colors.gray,
-                    fontWeight = FontWeight.W400,
-                ),
+    val currentProblem = problem
+    val failure = when {
+        fileFailed -> stringResource(R.string.data_csv_unreadable)
+        currentProblem != null -> csvProblemText(currentProblem)
+        else -> null
+    }
+    Box(Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .submenuPadding(),
+            verticalArrangement = Arrangement.spacedBy(spacing.stack),
+        ) {
+            DataTitle(stringResource(R.string.menu_data), onBack)
+            DataCard(title = stringResource(R.string.data_background)) {
+                CollectionStateLine(granted, readings)
+                BasicText(
+                    text = stringResource(
+                        R.string.data_last_reading_line,
+                        lastReadingText(readings.snapshot?.recordedAt),
+                    ),
+                    style = SteplyTheme.typography.caption.copy(
+                        color = SteplyTheme.colors.gray,
+                        fontWeight = FontWeight.W400,
+                    ),
+                )
+            }
+            DataCard(title = stringResource(R.string.data_footprint)) {
+                FootprintKpi(
+                    value = groupedCount(readingCount),
+                    label = stringResource(R.string.data_readings),
+                )
+                FootprintKpi(
+                    value = formatStorageSize(databaseBytes, locale),
+                    label = stringResource(R.string.data_database),
+                )
+            }
+            DataCard(title = stringResource(R.string.data_file)) {
+                SteplyPillButton(
+                    label = stringResource(R.string.data_export),
+                    onClick = { exportFile.launch("steply.csv") },
+                    modifier = Modifier.fillMaxWidth(),
+                    style = SteplyPillButtonStyle.Secondary,
+                )
+                SteplyPillButton(
+                    label = stringResource(R.string.data_import),
+                    onClick = { importFile.launch(CsvMimeTypes) },
+                    modifier = Modifier.fillMaxWidth(),
+                    style = SteplyPillButtonStyle.Secondary,
+                )
+                SteplyPillButton(
+                    label = stringResource(R.string.data_delete_steps),
+                    onClick = { confirmDelete = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    style = SteplyPillButtonStyle.DestructiveText,
+                )
+                if (failure != null) {
+                    BasicText(
+                        text = failure,
+                        style = SteplyTheme.typography.caption.copy(
+                            color = SteplyTheme.colors.error,
+                            fontWeight = FontWeight.W400,
+                        ),
+                    )
+                }
+            }
+        }
+        if (confirmDelete) {
+            DeleteStepsSheet(
+                onConfirm = {
+                    confirmDelete = false
+                    scope.launch {
+                        container.stepCounterRepository.purgeSteps()
+                        fileFailed = false
+                        problem = null
+                    }
+                },
+                onDismiss = { confirmDelete = false },
             )
         }
-        DataCard(title = stringResource(R.string.data_footprint)) {
-            FootprintKpi(
-                value = groupedCount(readingCount),
-                label = stringResource(R.string.data_readings),
+    }
+}
+
+@Composable
+private fun csvProblemText(problem: StepCsvProblem): String = when (problem) {
+    StepCsvProblem.Empty -> stringResource(R.string.data_csv_empty)
+    StepCsvProblem.Header -> stringResource(R.string.data_csv_header)
+    is StepCsvProblem.Row -> when (problem.reason) {
+        StepCsvRowReason.Columns -> stringResource(R.string.data_csv_columns, problem.number)
+        StepCsvRowReason.Required -> stringResource(R.string.data_csv_required, problem.number)
+        StepCsvRowReason.Type -> stringResource(R.string.data_csv_type, problem.number)
+        StepCsvRowReason.Value -> stringResource(R.string.data_csv_value, problem.number)
+        StepCsvRowReason.Unit -> stringResource(R.string.data_csv_unit, problem.number)
+        StepCsvRowReason.Resolution -> stringResource(R.string.data_csv_resolution, problem.number)
+        StepCsvRowReason.Time -> stringResource(R.string.data_csv_time, problem.number)
+        StepCsvRowReason.Order -> stringResource(R.string.data_csv_order, problem.number)
+        StepCsvRowReason.Offset -> stringResource(R.string.data_csv_offset, problem.number)
+    }
+}
+
+@Composable
+private fun DeleteStepsSheet(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val colors = SteplyTheme.colors
+    val spacing = SteplyTheme.spacing
+    val scrim = remember { MutableInteractionSource() }
+    val sheet = remember { MutableInteractionSource() }
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = ScrimAlpha))
+                .clickable(interactionSource = scrim, indication = null, onClick = onDismiss),
+        )
+        Column(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = SteplyTheme.radius.card, topEnd = SteplyTheme.radius.card))
+                .background(colors.card)
+                .clickable(interactionSource = sheet, indication = null, onClick = {})
+                .padding(horizontal = spacing.screen, vertical = spacing.card),
+            verticalArrangement = Arrangement.spacedBy(spacing.card),
+        ) {
+            BasicText(
+                text = stringResource(R.string.data_delete_steps_body),
+                modifier = Modifier.semantics { heading() },
+                style = SteplyTheme.typography.body.copy(color = colors.text),
             )
-            FootprintKpi(
-                value = formatStorageSize(databaseBytes, locale),
-                label = stringResource(R.string.data_database),
+            SteplyPillButton(
+                label = stringResource(R.string.data_delete),
+                onClick = onConfirm,
+                modifier = Modifier.fillMaxWidth(),
+                style = SteplyPillButtonStyle.Destructive,
+            )
+            SteplyPillButton(
+                label = stringResource(R.string.profile_cancel),
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+                style = SteplyPillButtonStyle.Text,
             )
         }
     }
@@ -265,4 +448,24 @@ private fun fileLength(file: File): Long = if (file.isFile) file.length() else 0
 private fun groupedCount(count: Long): String {
     val digits = count.coerceAtLeast(0L).toString()
     return digits.reversed().chunked(3).joinToString(" ").reversed()
+}
+
+private fun readCsv(context: Context, uri: Uri): String? = try {
+    context.contentResolver.openInputStream(uri)?.use { input ->
+        input.bufferedReader(Charsets.UTF_8).readText()
+    }
+} catch (_: IOException) {
+    null
+} catch (_: SecurityException) {
+    null
+}
+
+private fun writeCsv(context: Context, uri: Uri, csv: String): Boolean = try {
+    context.contentResolver.openOutputStream(uri)?.use { output ->
+        output.write(csv.toByteArray(Charsets.UTF_8))
+    } != null
+} catch (_: IOException) {
+    false
+} catch (_: SecurityException) {
+    false
 }
