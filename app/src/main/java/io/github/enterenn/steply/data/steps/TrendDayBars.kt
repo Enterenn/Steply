@@ -32,6 +32,20 @@ fun averageTrendSteps(bars: List<TrendDayBar>): Int {
     return ((sum + size / 2) / size).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
 }
 
+/** Plus haut total strictement positif. À égalité, la barre la plus récente. */
+fun peakTrendDay(bars: List<TrendDayBar>): TrendDayBar? =
+    bars.withIndex()
+        .filter { (_, bar) -> bar.steps > 0L }
+        .maxWithOrNull(compareBy({ it.value.steps }, { it.index }))
+        ?.value
+
+/** Plus bas total strictement positif. À égalité, la barre la plus récente. */
+fun lowTrendDay(bars: List<TrendDayBar>): TrendDayBar? =
+    bars.withIndex()
+        .filter { (_, bar) -> bar.steps > 0L }
+        .minWithOrNull(compareBy({ it.value.steps }, { -it.index }))
+        ?.value
+
 /**
  * L'axe dépasse l'objectif et le jour le plus haut, pour que la ligne
  * et la barre ne collent pas au bord. Si un jour dépasse 10 000, le sommet

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.data.steps.TrendDayBar
@@ -30,12 +34,15 @@ import io.github.enterenn.steply.data.steps.TrendGoalSteps
 import io.github.enterenn.steply.data.steps.averageTrendSteps
 import io.github.enterenn.steply.data.steps.formatTrendAxisTick
 import io.github.enterenn.steply.data.steps.groupThousands
+import io.github.enterenn.steply.data.steps.lowTrendDay
+import io.github.enterenn.steply.data.steps.peakTrendDay
 import io.github.enterenn.steply.data.steps.showsTrendBarLabel
 import io.github.enterenn.steply.data.steps.trendAxisTickValues
 import io.github.enterenn.steply.data.steps.trendChartMax
 import io.github.enterenn.steply.data.steps.trendDayBars
 import io.github.enterenn.steply.ui.components.SteplyCard
 import io.github.enterenn.steply.ui.components.SteplyChartTick
+import io.github.enterenn.steply.ui.components.SteplyListRow
 import io.github.enterenn.steply.ui.components.SteplyHistogram
 import io.github.enterenn.steply.ui.components.SteplySegmentedControl
 import io.github.enterenn.steply.ui.components.SteplyStatTile
@@ -148,7 +155,57 @@ fun TrendsScreen(container: AppContainer) {
                 modifier = Modifier.weight(1f),
             )
         }
+        val peak = if (year) null else peakTrendDay(chartBars)
+        if (peak != null) {
+            PeriodSummaryCard(bars = chartBars, sevenDays = !month)
+        }
     }
+}
+
+@Composable
+private fun PeriodSummaryCard(bars: List<TrendDayBar>, sevenDays: Boolean) {
+    val peak = peakTrendDay(bars) ?: return
+    val low = lowTrendDay(bars)?.takeUnless { it.day == peak.day }
+    val spacing = SteplyTheme.spacing
+    val unit = stringResource(R.string.gallery_stat_steps_unit)
+    SteplyCard(contentPadding = PaddingValues(0.dp)) {
+        BasicText(
+            text = stringResource(R.string.trends_summary_title),
+            modifier = Modifier
+                .padding(
+                    start = spacing.card,
+                    top = spacing.card,
+                    end = spacing.card,
+                    bottom = spacing.inline,
+                )
+                .semantics { heading() },
+            style = SteplyTheme.typography.title.copy(color = SteplyTheme.colors.text),
+        )
+        SteplyListRow(
+            label = stringResource(R.string.trends_peak_label),
+            value = dayRowValue(peak, sevenDays, unit),
+        )
+        if (low != null) {
+            SteplyListRow(
+                label = stringResource(R.string.trends_low_label),
+                value = dayRowValue(low, sevenDays, unit),
+            )
+        }
+        SteplyListRow(
+            label = stringResource(R.string.trends_total_label),
+            value = "${groupThousands(bars.sumOf { it.steps })} $unit",
+        )
+    }
+}
+
+@Composable
+private fun dayRowValue(bar: TrendDayBar, sevenDays: Boolean, unit: String): String {
+    val date = if (sevenDays) {
+        "${stringResource(chartAbbreviation(bar.day.dayOfWeek))} ${bar.day.dayOfMonth}"
+    } else {
+        "${bar.day.dayOfMonth}/${bar.day.monthValue}"
+    }
+    return "$date, ${groupThousands(bar.steps)} $unit"
 }
 
 @Composable
