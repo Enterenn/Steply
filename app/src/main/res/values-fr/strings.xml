@@ -76,6 +76,7 @@
     <string name="menu_profile">Profil</string>
     <string name="menu_data">Données</string>
     <string name="menu_settings">Réglages</string>
+    <string name="menu_help">Aide</string>
     <string name="menu_about">À propos</string>
     <string name="about_back">Retour</string>
     <string name="about_version">Version : %1$s</string>
@@ -161,4 +162,18 @@
     <string name="settings_language_device">Langue de l\'appareil</string>
     <string name="settings_language_en">Anglais</string>
     <string name="settings_language_fr">Français</string>
+    <string name="help_storage_q">Où sont gardés mes pas ?</string>
+    <string name="help_storage_a">Sur ce téléphone. Il n\'y a pas de compte, ni de cloud.</string>
+    <string name="help_permission_q">Pourquoi Steply demande-t-il de reconnaître l\'activité physique ?</string>
+    <string name="help_permission_a">Pour lire le compteur de pas du téléphone. Si cette permission est coupée, Données indique que la collecte est arrêtée.</string>
+    <string name="help_background_q">Les pas comptent-ils quand l\'app est fermée ?</string>
+    <string name="help_background_a">Oui. Données indique si la collecte est en cours et l\'heure du dernier relevé.</string>
+    <string name="help_goal_q">À quoi sert l\'objectif du jour ?</string>
+    <string name="help_goal_a">Il commence à 8 000 pas. Définir l\'objectif dans Pas le modifie. Les notifications d\'objectif restent coupées tant qu\'elles ne sont pas activées dans Réglages. Elles restent sur le téléphone : au plus une notice le jour où l\'objectif est atteint.</string>
+    <string name="help_estimates_q">Que sont la distance, la durée et les calories ?</string>
+    <string name="help_estimates_a">Des estimations, pas une mesure médicale. Le poids et la taille sont facultatifs et ne servent qu\'à affiner ces estimations. Le compteur de la semaine, par exemple 3/7, est le nombre de jours de cette semaine où l\'objectif a été atteint. Ce n\'est pas une série.</string>
+    <string name="help_units_q">Que changent les unités et la langue ?</string>
+    <string name="help_units_a">Les unités ne changent que l\'affichage. La distance, le poids et la taille restent enregistrés en kilomètres, kilogrammes et centimètres. La langue, l\'apparence et la couleur d\'accent sont dans Réglages et s\'appliquent à toute l\'app.</string>
+    <string name="help_collapsed_a11y">Réduit</string>
+    <string name="help_expanded_a11y">Développé</string>
 </resources>
