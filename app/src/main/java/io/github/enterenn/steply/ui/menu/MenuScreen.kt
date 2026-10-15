@@ -29,6 +29,7 @@ fun MenuScreen(
     onProfile: () -> Unit,
     onData: () -> Unit,
     onSettings: () -> Unit,
+    onHelp: () -> Unit,
 ) {
     val spacing = SteplyTheme.spacing
     Column(
@@ -51,9 +52,10 @@ fun MenuScreen(
         )
         MenuGroup(
             title = R.string.menu_group_other,
-            rows = listOf(R.string.menu_settings, R.string.menu_about),
+            rows = listOf(R.string.menu_settings, R.string.menu_help, R.string.menu_about),
             onAbout = onAbout,
             onSettings = onSettings,
+            onHelp = onHelp,
         )
     }
 }
@@ -66,6 +68,7 @@ private fun MenuGroup(
     onProfile: () -> Unit = {},
     onData: () -> Unit = {},
     onSettings: () -> Unit = {},
+    onHelp: () -> Unit = {},
 ) {
     val spacing = SteplyTheme.spacing
     SteplyCard(contentPadding = PaddingValues(0.dp)) {
@@ -90,6 +93,7 @@ private fun MenuGroup(
                     R.string.menu_profile -> onProfile
                     R.string.menu_data -> onData
                     R.string.menu_settings -> onSettings
+                    R.string.menu_help -> onHelp
                     else -> ({ })
                 },
             )
