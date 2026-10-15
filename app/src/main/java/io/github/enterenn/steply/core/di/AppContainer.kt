@@ -7,6 +7,8 @@ import io.github.enterenn.steply.data.db.AppDatabase
 import io.github.enterenn.steply.data.db.MIGRATION_1_2
 import io.github.enterenn.steply.data.steps.DailyGoalHistory
 import io.github.enterenn.steply.data.steps.DailyGoalStore
+import io.github.enterenn.steply.data.steps.Profile
+import io.github.enterenn.steply.data.steps.ProfileStore
 import io.github.enterenn.steply.data.steps.StepCounterReader
 import io.github.enterenn.steply.data.steps.StepCounterRepository
 import io.github.enterenn.steply.data.steps.StepReadingsState
@@ -51,6 +53,22 @@ class AppContainer(context: Context) {
             val walkedToday = stepCounterRepository.stepsOn(LocalDate.now())
             dailyGoalStore.setGoal(steps, walkedToday)
         }
+    }
+
+    private val profileStore: ProfileStore by lazy { ProfileStore(appContext) }
+    val profile: Flow<Profile>
+        get() = profileStore.profile
+
+    fun setProfileName(raw: String) {
+        scope.launch { profileStore.setName(raw) }
+    }
+
+    fun setProfileWeightKg(kg: Int) {
+        scope.launch { profileStore.setWeightKg(kg) }
+    }
+
+    fun setProfileHeightCm(cm: Int) {
+        scope.launch { profileStore.setHeightCm(cm) }
     }
 
     private val _activityRecognitionGranted =

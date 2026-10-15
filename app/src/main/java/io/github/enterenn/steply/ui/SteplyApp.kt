@@ -55,6 +55,7 @@ import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.data.steps.DailyGoalDefault
 import io.github.enterenn.steply.ui.menu.AboutScreen
 import io.github.enterenn.steply.ui.menu.MenuScreen
+import io.github.enterenn.steply.ui.menu.ProfileScreen
 import io.github.enterenn.steply.ui.steps.GoalEditorSheet
 import io.github.enterenn.steply.ui.steps.StepsScreen
 import io.github.enterenn.steply.ui.components.pressBounce
@@ -71,6 +72,8 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.tan
 
+private enum class MenuDestination { Menu, About, Profile }
+
 private enum class Tab(@StringRes val label: Int, val glyph: String) {
     Steps(R.string.tab_steps, "\uED60"),
     Trends(R.string.tab_trends, "\uE150"),
@@ -80,7 +83,7 @@ private enum class Tab(@StringRes val label: Int, val glyph: String) {
 @Composable
 fun SteplyApp(container: AppContainer) {
     var selected by rememberSaveable { mutableStateOf(Tab.Steps) }
-    var aboutOpen by rememberSaveable { mutableStateOf(false) }
+    var menuDestination by rememberSaveable { mutableStateOf(MenuDestination.Menu) }
     var editingGoal by rememberSaveable { mutableStateOf(false) }
     val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
     val readings by container.stepReadings.collectAsState()
@@ -111,14 +114,22 @@ fun SteplyApp(container: AppContainer) {
                 when (selected) {
                     Tab.Steps -> StepsScreen(container, onEditGoal = { editingGoal = true })
                     Tab.Trends -> TrendsScreen(container)
-                    Tab.Menu -> if (aboutOpen) {
-                        AboutScreen(onBack = { aboutOpen = false })
-                    } else {
-                        MenuScreen(onAbout = { aboutOpen = true })
+                    Tab.Menu -> when (menuDestination) {
+                        MenuDestination.About -> AboutScreen(onBack = {
+                            menuDestination = MenuDestination.Menu
+                        })
+                        MenuDestination.Profile -> ProfileScreen(
+                            container = container,
+                            onBack = { menuDestination = MenuDestination.Menu },
+                        )
+                        MenuDestination.Menu -> MenuScreen(
+                            onAbout = { menuDestination = MenuDestination.About },
+                            onProfile = { menuDestination = MenuDestination.Profile },
+                        )
                     }
                 }
             }
-            if (!(selected == Tab.Menu && aboutOpen)) {
+            if (!(selected == Tab.Menu && menuDestination != MenuDestination.Menu)) {
                 TabBar(
                     selected = selected,
                     onSelect = { selected = it },
