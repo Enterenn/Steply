@@ -91,7 +91,7 @@ fun DataScreen(container: AppContainer, onBack: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(spacing.screen),
+            .submenuPadding(),
         verticalArrangement = Arrangement.spacedBy(spacing.stack),
     ) {
         DataTitle(stringResource(R.string.menu_data), onBack)
