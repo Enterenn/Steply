@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -76,6 +77,7 @@ import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.data.steps.CollectionHealth
 import io.github.enterenn.steply.data.steps.DailyGoalDefault
 import io.github.enterenn.steply.data.steps.collectionHealth
+import io.github.enterenn.steply.data.steps.daysReachingGoal
 import io.github.enterenn.steply.data.steps.derivedActivity
 import io.github.enterenn.steply.data.steps.DailyGoalMax
 import io.github.enterenn.steply.data.steps.DailyGoalMin
@@ -119,8 +121,12 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
     val readings by container.stepReadings.collectAsState()
     val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
     var steps by remember { mutableLongStateOf(0L) }
+    var weekSteps by remember { mutableStateOf(List(week.size) { 0L }) }
     LaunchedEffect(selectedDate, readings) {
         steps = container.stepCounterRepository.stepsOn(selectedDate)
+    }
+    LaunchedEffect(readings) {
+        weekSteps = week.map { day -> container.stepCounterRepository.stepsOn(day.date) }
     }
     val spacing = SteplyTheme.spacing
     Column(
@@ -133,6 +139,7 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
         WeekDayCard(
             days = week,
             selectedIndex = selectedDay,
+            daysAtGoal = daysReachingGoal(weekSteps, goal),
             onSelect = { selectedDay = it },
         )
         StepsProgressCard(
@@ -159,15 +166,33 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
 private fun WeekDayCard(
     days: List<WeekDay>,
     selectedIndex: Int,
+    daysAtGoal: Int,
     onSelect: (Int) -> Unit,
 ) {
     val spacing = SteplyTheme.spacing
+    val countLabel = pluralStringResource(
+        R.plurals.steps_week_goal_a11y,
+        daysAtGoal,
+        daysAtGoal,
+        days.size,
+    )
     SteplyCard {
-        BasicText(
-            text = stringResource(R.string.steps_week_title),
-            modifier = Modifier.semantics { heading() },
-            style = SteplyTheme.typography.title.copy(color = SteplyTheme.colors.text),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicText(
+                text = stringResource(R.string.steps_week_title),
+                modifier = Modifier.semantics { heading() },
+                style = SteplyTheme.typography.title.copy(color = SteplyTheme.colors.text),
+            )
+            BasicText(
+                text = "$daysAtGoal/${days.size}",
+                modifier = Modifier.clearAndSetSemantics { contentDescription = countLabel },
+                style = SteplyTheme.typography.caption.copy(color = SteplyTheme.colors.text),
+            )
+        }
         Row(
             modifier = Modifier
                 .padding(top = spacing.card)

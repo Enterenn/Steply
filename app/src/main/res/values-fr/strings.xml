@@ -9,6 +9,10 @@
     <string name="steps_permission_allow">Autoriser</string>
     <string name="steps_permission_settings">Ouvrir les réglages</string>
     <string name="steps_week_title">Cette semaine</string>
+    <plurals name="steps_week_goal_a11y">
+        <item quantity="one">%1$d jour sur %2$d a atteint l\'objectif</item>
+        <item quantity="other">%1$d jours sur %2$d ont atteint l\'objectif</item>
+    </plurals>
     <string name="day_pill_label">%1$s %2$s</string>
     <string name="day_mon_short">LUN</string>
     <string name="day_tue_short">MAR</string>
