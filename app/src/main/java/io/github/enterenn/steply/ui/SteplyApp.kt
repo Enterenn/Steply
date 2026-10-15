@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.data.steps.DailyGoalDefault
+import io.github.enterenn.steply.ui.menu.AboutScreen
 import io.github.enterenn.steply.ui.menu.MenuScreen
 import io.github.enterenn.steply.ui.steps.GoalEditorSheet
 import io.github.enterenn.steply.ui.steps.StepsScreen
@@ -79,6 +80,7 @@ private enum class Tab(@StringRes val label: Int, val glyph: String) {
 @Composable
 fun SteplyApp(container: AppContainer) {
     var selected by rememberSaveable { mutableStateOf(Tab.Steps) }
+    var aboutOpen by rememberSaveable { mutableStateOf(false) }
     var editingGoal by rememberSaveable { mutableStateOf(false) }
     val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
     val readings by container.stepReadings.collectAsState()
@@ -109,13 +111,19 @@ fun SteplyApp(container: AppContainer) {
                 when (selected) {
                     Tab.Steps -> StepsScreen(container, onEditGoal = { editingGoal = true })
                     Tab.Trends -> TrendsScreen(container)
-                    Tab.Menu -> MenuScreen()
+                    Tab.Menu -> if (aboutOpen) {
+                        AboutScreen(onBack = { aboutOpen = false })
+                    } else {
+                        MenuScreen(onAbout = { aboutOpen = true })
+                    }
                 }
             }
-            TabBar(
-                selected = selected,
-                onSelect = { selected = it },
-            )
+            if (!(selected == Tab.Menu && aboutOpen)) {
+                TabBar(
+                    selected = selected,
+                    onSelect = { selected = it },
+                )
+            }
         }
         if (editingGoal) {
             GoalEditorSheet(
