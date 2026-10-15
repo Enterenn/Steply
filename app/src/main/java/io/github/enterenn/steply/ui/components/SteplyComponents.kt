@@ -47,17 +47,23 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import io.github.enterenn.steply.R
 import io.github.enterenn.steply.ui.theme.SteplyTheme
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
+private val PhosphorRegular = FontFamily(Font(R.font.phosphor_regular))
 private val TouchTarget = 48.dp
 private val EaseOutCubic = CubicBezierEasing(0.33f, 1f, 0.68f, 1f)
 private val EaseInOutCubic = CubicBezierEasing(0.65f, 0f, 0.35f, 1f)
@@ -94,6 +100,7 @@ fun SteplyListRow(
     label: String,
     modifier: Modifier = Modifier,
     value: String? = null,
+    glyph: String? = null,
     onClick: (() -> Unit)? = null,
 ) {
     val colors = SteplyTheme.colors
@@ -128,6 +135,20 @@ fun SteplyListRow(
                 style = SteplyTheme.typography.caption.copy(color = colors.text),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (glyph != null) {
+            BasicText(
+                text = glyph,
+                modifier = Modifier
+                    .padding(start = SteplyTheme.spacing.inline)
+                    .clearAndSetSemantics {},
+                style = TextStyle(
+                    fontFamily = PhosphorRegular,
+                    fontSize = SteplyTheme.typography.body.fontSize,
+                    lineHeight = SteplyTheme.typography.body.lineHeight,
+                    color = colors.gray,
+                ),
             )
         }
     }
