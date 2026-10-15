@@ -113,11 +113,7 @@ Le bracelet propriétaire, le firmware, le PCB et la certification n'ont pas leu
 - **F-62** Thème : système / clair / sombre, et 6 couleurs d'accent.
 - **F-63** Langue : français / anglais, indépendante des unités.
 
-### 5.8 À propos
-
-- **F-70** Nom, version, licence. L'icône est à redessiner (voir §8.5).
-
-### 5.9 Collecte et données
+### 5.8 Collecte et données
 
 - **F-80** Lecture du compteur de pas matériel, détection des redémarrages et des remises à zéro du compteur.
 - **F-81** Découpage proportionnel des pas à cheval sur minuit (aucune perte, aucun double comptage).
@@ -241,7 +237,7 @@ Point ouvert : en clair, le rouge (3,9) et le violet (4,1) restent sous 4,5 avec
 
 ### 8.5 Icône et identité
 
-L'icône actuelle (lettre « a » avec étincelle à quatre branches) est à redessiner : l'étincelle est devenue le symbole des fonctions d'IA, un mauvais signal pour une app locale et sans cloud. L'icône suit le nouveau nom (Steply), avec une version adaptative Android.
+**\[Décidé\]** L'icône actuelle reste. Pas de refonte dans cette version. La page À propos (nom, version, licence) est livrée telle quelle.
 
 ### 8.6 Composants de base (ordre de construction)
 
@@ -317,7 +313,6 @@ Disponibilité du nom : le nom Steply n'a pas été vérifié ici. À contrôler
 | 7 | Cadres sombres et variantes d'accent dans Figma | Thème, tests de captures |
 | 8 | `minSdk` | Compatibilité, API disponibles |
 | 9 | Injection de dépendances : manuelle ou Koin ? | Architecture |
-| 10 | Nouvelle icône sans étincelle | Identité, F-70 |
 | 11 | Disponibilité du nom et `applicationId` | Création du dépôt |
 | 12 | Statut de la marque et de l'identité visuelle (propriétaires ?) | Licence |
 
