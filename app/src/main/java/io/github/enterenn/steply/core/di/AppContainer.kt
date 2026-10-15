@@ -5,6 +5,7 @@ import androidx.room.Room
 import io.github.enterenn.steply.core.hasActivityRecognitionPermission
 import io.github.enterenn.steply.data.db.AppDatabase
 import io.github.enterenn.steply.data.db.MIGRATION_1_2
+import io.github.enterenn.steply.data.steps.DailyGoalHistory
 import io.github.enterenn.steply.data.steps.DailyGoalStore
 import io.github.enterenn.steply.data.steps.StepCounterReader
 import io.github.enterenn.steply.data.steps.StepCounterRepository
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.time.LocalDate
 import kotlinx.coroutines.launch
 
 /** Injection manuelle : point unique de construction des dépendances. */
@@ -41,8 +43,14 @@ class AppContainer(context: Context) {
     val dailyGoal: Flow<Int>
         get() = dailyGoalStore.goal
 
+    val dailyGoalHistory: Flow<DailyGoalHistory>
+        get() = dailyGoalStore.history
+
     fun setDailyGoal(steps: Int) {
-        scope.launch { dailyGoalStore.setGoal(steps) }
+        scope.launch {
+            val walkedToday = stepCounterRepository.stepsOn(LocalDate.now())
+            dailyGoalStore.setGoal(steps, walkedToday)
+        }
     }
 
     private val _activityRecognitionGranted =

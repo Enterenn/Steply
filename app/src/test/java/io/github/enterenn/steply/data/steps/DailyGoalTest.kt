@@ -1,6 +1,8 @@
 package io.github.enterenn.steply.data.steps
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DailyGoalTest {
@@ -24,5 +26,26 @@ class DailyGoalTest {
     fun snapsToFiveHundredStep() {
         assertEquals(8_000, resolveDailyGoal(8_200))
         assertEquals(8_500, resolveDailyGoal(8_300))
+    }
+
+    @Test
+    fun decreaseAtOrAboveTodayStepsIsAccepted() {
+        assertTrue(acceptsDailyGoalChange(10_000, 8_000, 8_000L))
+        assertTrue(acceptsDailyGoalChange(10_000, 8_000, 7_000L))
+    }
+
+    @Test
+    fun decreaseBelowTodayStepsIsRefused() {
+        assertFalse(acceptsDailyGoalChange(10_000, 5_000, 8_000L))
+    }
+
+    @Test
+    fun increaseIsAcceptedEvenBelowTodaySteps() {
+        assertTrue(acceptsDailyGoalChange(4_000, 6_000, 8_000L))
+    }
+
+    @Test
+    fun decreaseIsAcceptedWhenTodayHasNoSteps() {
+        assertTrue(acceptsDailyGoalChange(10_000, 1_000, 0L))
     }
 }

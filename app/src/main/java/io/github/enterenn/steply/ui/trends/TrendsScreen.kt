@@ -30,7 +30,9 @@ import androidx.compose.ui.unit.dp
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.data.steps.DailyGoalDefault
+import io.github.enterenn.steply.data.steps.DailyGoalHistory
 import io.github.enterenn.steply.data.steps.TrendDayBar
+import io.github.enterenn.steply.data.steps.goalsForDays
 import io.github.enterenn.steply.data.steps.averageTrendKcal
 import io.github.enterenn.steply.data.steps.averageTrendSteps
 import io.github.enterenn.steply.data.steps.formatTrendAxisTick
@@ -63,6 +65,7 @@ fun TrendsScreen(container: AppContainer) {
     val dayCount = if (month) ThirtyDayCount else SevenDayCount
     val readings by container.stepReadings.collectAsState()
     val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
+    val goalHistory by container.dailyGoalHistory.collectAsState(initial = DailyGoalHistory())
     var bars by remember { mutableStateOf<List<TrendDayBar>>(emptyList()) }
     LaunchedEffect(dayCount, readings, year) {
         if (year) return@LaunchedEffect
@@ -105,7 +108,7 @@ fun TrendsScreen(container: AppContainer) {
                 SteplyHistogram(
                     values = ExampleYearSteps,
                     maxValue = ExampleYearMax,
-                    goalValue = 0,
+                    goalValues = emptyList(),
                     ticks = listOf(
                         SteplyChartTick(ExampleYearMax, stringResource(R.string.chart_axis_year_max)),
                         SteplyChartTick(ExampleChartGoal, stringResource(R.string.chart_axis_goal)),
@@ -115,18 +118,22 @@ fun TrendsScreen(container: AppContainer) {
                     contentDescription = stringResource(R.string.trends_chart_12_a11y),
                 )
             } else {
-                val maxValue = trendChartMax(chartBars.maxOfOrNull { it.steps } ?: 0L)
+                val dayGoals = periodGoals(chartBars, goal, goalHistory)
+                val maxValue = trendChartMax(
+                    chartBars.maxOfOrNull { it.steps } ?: 0L,
+                    dayGoals,
+                )
                 SteplyHistogram(
                     values = chartBars.map { bar ->
                         bar.steps.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
                     },
                     maxValue = maxValue,
-                    goalValue = goal,
-                    ticks = trendAxisTickValues(maxValue).map { value ->
+                    goalValues = dayGoals,
+                    ticks = trendAxisTickValues(maxValue, dayGoals).map { value ->
                         SteplyChartTick(value, formatTrendAxisTick(value))
                     },
                     dayLabels = chartDayLabels(chartBars),
-                    contentDescription = chartDescription(chartBars, goal),
+                    contentDescription = chartDescription(chartBars, dayGoals),
                 )
             }
         }
@@ -223,8 +230,22 @@ private fun chartDayLabels(bars: List<TrendDayBar>): List<String> {
     return labels
 }
 
+private fun periodGoals(
+    bars: List<TrendDayBar>,
+    currentGoal: Int,
+    history: DailyGoalHistory,
+): List<Int> {
+    val days = bars.map { it.day }
+    val recordedStart = history.startingGoal
+    return if (recordedStart == null) {
+        goalsForDays(days, currentGoal, emptyList())
+    } else {
+        goalsForDays(days, recordedStart, history.changes)
+    }
+}
+
 @Composable
-private fun chartDescription(bars: List<TrendDayBar>, goal: Int): String {
+private fun chartDescription(bars: List<TrendDayBar>, goals: List<Int>): String {
     val monthLabel = DateTimeFormatter.ofPattern("MMM", Locale.getDefault())
     val parts = ArrayList<String>(bars.size)
     for (bar in bars) {
@@ -237,10 +258,24 @@ private fun chartDescription(bars: List<TrendDayBar>, goal: Int): String {
         }
     }
     val spoken = parts.joinToString(", ")
+    val distinctGoals = ArrayList<Int>(goals.size)
+    for (value in goals) {
+        if (value !in distinctGoals) distinctGoals += value
+    }
+    if (distinctGoals.size <= 1) {
+        val single = distinctGoals.firstOrNull() ?: 0
+        return stringResource(
+            R.string.trends_chart_days_a11y,
+            bars.size,
+            groupThousands(single.toLong()),
+            spoken,
+        )
+    }
+    val listed = distinctGoals.joinToString(", ") { groupThousands(it.toLong()) }
     return stringResource(
-        R.string.trends_chart_days_a11y,
+        R.string.trends_chart_days_goals_a11y,
         bars.size,
-        groupThousands(goal.toLong()),
+        listed,
         spoken,
     )
 }

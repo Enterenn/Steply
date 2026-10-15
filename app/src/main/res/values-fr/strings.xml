@@ -41,6 +41,7 @@
     <string name="steps_goal_save">Enregistrer</string>
     <string name="steps_goal_cancel">Annuler</string>
     <string name="steps_goal_error">Saisis une valeur entre 1 000 et 30 000.</string>
+    <string name="steps_goal_below_today">Cet objectif est en dessous des pas déjà faits aujourd\'hui.</string>
     <string name="steps_goal_input_a11y">Objectif de pas</string>
     <string name="steps_stat_kcal">%1$s kcal</string>
     <string name="steps_stat_distance">%1$s km</string>
@@ -55,6 +56,7 @@
     <string name="trends_period_12">12 mois</string>
     <string name="trends_range_12">nov. 2025 – oct. 2026</string>
     <string name="trends_chart_days_a11y">Pas sur %1$d jours. Objectif %2$s. %3$s.</string>
+    <string name="trends_chart_days_goals_a11y">Pas sur %1$d jours. Objectifs %2$s. %3$s.</string>
     <string name="trends_chart_12_a11y">Pas sur 12 mois, novembre 2025 à octobre 2026. Novembre 0, décembre 0, janvier 0, février 0, mars 0, avril 0, mai 0, juin 2 400, juillet 3 400, août 4 200, septembre 4 000, octobre 3 600.</string>
     <string name="trends_summary_title">Cette période</string>
     <string name="trends_peak_label">Jour record</string>

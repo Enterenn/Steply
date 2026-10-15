@@ -374,7 +374,7 @@ private val MicroTickEasing = CubicBezierEasing(0f, 0f, 0.2f, 1f)
 fun SteplyHistogram(
     values: List<Int>,
     maxValue: Int,
-    goalValue: Int,
+    goalValues: List<Int>,
     ticks: List<SteplyChartTick>,
     dayLabels: List<String>,
     contentDescription: String,
@@ -414,7 +414,7 @@ fun SteplyHistogram(
             ChartPlot(
                 values = values,
                 maxValue = maxValue,
-                goalValue = goalValue,
+                goalValues = goalValues,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
@@ -508,7 +508,7 @@ private fun ChartYAxis(
 private fun ChartPlot(
     values: List<Int>,
     maxValue: Int,
-    goalValue: Int,
+    goalValues: List<Int>,
     modifier: Modifier = Modifier,
 ) {
     val barColor = SteplyTheme.colors.accent
@@ -539,17 +539,28 @@ private fun ChartPlot(
                 barColor,
             )
         }
-        if (goalValue > 0 && goalValue <= maxValue) {
-            val y = size.height * (1f - goalValue.toFloat() / maxValue.toFloat())
-            drawLine(
-                color = barColor,
-                start = Offset(0f, y),
-                end = Offset(size.width, y),
-                strokeWidth = GoalLineStroke.toPx(),
-                pathEffect = PathEffect.dashPathEffect(
-                    floatArrayOf(GoalDash.toPx(), GoalGap.toPx()),
-                ),
-            )
+        val count = minOf(values.size, goalValues.size)
+        if (count > 0) {
+            val slot = size.width / values.size.toFloat()
+            var start = 0
+            while (start < count) {
+                val goal = goalValues[start]
+                var end = start + 1
+                while (end < count && goalValues[end] == goal) end++
+                if (goal > 0 && goal <= maxValue) {
+                    val y = size.height * (1f - goal.toFloat() / maxValue.toFloat())
+                    drawLine(
+                        color = barColor,
+                        start = Offset(start * slot, y),
+                        end = Offset(end * slot, y),
+                        strokeWidth = GoalLineStroke.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(
+                            floatArrayOf(GoalDash.toPx(), GoalGap.toPx()),
+                        ),
+                    )
+                }
+                start = end
+            }
         }
     }
 }
