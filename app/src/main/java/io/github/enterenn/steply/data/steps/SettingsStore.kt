@@ -42,6 +42,7 @@ private val ThemeKey = stringPreferencesKey("theme_mode")
 private val AccentKey = stringPreferencesKey("accent")
 private val LanguageKey = stringPreferencesKey("language")
 private val GoalNotifiedOnKey = stringPreferencesKey("goal_notified_on")
+private val CelebrationShownOnKey = stringPreferencesKey("celebration_shown_on")
 private val LastOptimizationKey = stringPreferencesKey("last_optimization")
 
 private const val GoalChannelId = "goal"
@@ -56,6 +57,7 @@ data class Settings(
     val accent: AccentPreset = AccentPreset.Blue,
     val language: AppLanguage = AppLanguage.System,
     val goalNotifiedOn: LocalDate? = null,
+    val celebrationShownOn: LocalDate? = null,
 )
 
 class SettingsStore(context: Context) {
@@ -116,6 +118,10 @@ class SettingsStore(context: Context) {
 
     suspend fun setGoalNotifiedOn(day: LocalDate) {
         dataStore.edit { it[GoalNotifiedOnKey] = day.toString() }
+    }
+
+    suspend fun setCelebrationShownOn(day: LocalDate) {
+        dataStore.edit { it[CelebrationShownOnKey] = day.toString() }
     }
 
     suspend fun lastOptimization(): String? = dataStore.data
@@ -204,12 +210,13 @@ private fun settingsFrom(preferences: Preferences): Settings {
             "fr" -> AppLanguage.French
             else -> AppLanguage.System
         },
-        goalNotifiedOn = preferences[GoalNotifiedOnKey]?.let { raw ->
-            try {
-                LocalDate.parse(raw)
-            } catch (error: DateTimeParseException) {
-                null
-            }
-        },
+        goalNotifiedOn = preferences[GoalNotifiedOnKey]?.let(::localDateOrNull),
+        celebrationShownOn = preferences[CelebrationShownOnKey]?.let(::localDateOrNull),
     )
+}
+
+private fun localDateOrNull(raw: String): LocalDate? = try {
+    LocalDate.parse(raw)
+} catch (error: DateTimeParseException) {
+    null
 }

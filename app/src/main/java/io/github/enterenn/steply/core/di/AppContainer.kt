@@ -151,6 +151,10 @@ class AppContainer(context: Context) {
         scope.launch { settingsStore.setAccent(preset) }
     }
 
+    fun markGoalCelebration(day: LocalDate) {
+        scope.launch { settingsStore.setCelebrationShownOn(day) }
+    }
+
     fun setLanguage(language: AppLanguage, onApplied: () -> Unit = {}) {
         userLanguageChange = true
         scope.launch {
@@ -226,6 +230,7 @@ class AppContainer(context: Context) {
             settings = settings,
             stepsOnDay = { day -> stepCounterRepository.stepsOn(day) },
             onSetDailyGoal = this@AppContainer::setDailyGoal,
+            onMarkCelebration = this@AppContainer::markGoalCelebration,
         ) as T
     }
 }

@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class StepsViewModelTest {
@@ -47,6 +49,37 @@ class StepsViewModelTest {
     }
 
     @Test
+    fun celebratesTheSelectedDayOnce() = runBlocking {
+        val today = LocalDate.of(2026, 10, 16)
+        val marked = mutableListOf<LocalDate>()
+        val viewModel = viewModel(
+            stepsOn = { 8_000L },
+            onMarkCelebration = { marked += it },
+        )
+        viewModel.loadSelectedDay(today, today, goal = 8_000, shownOn = null, celebrate = true)
+        assertTrue(viewModel.uiState.value.showCelebration)
+        assertEquals(listOf(today), marked)
+        viewModel.loadSelectedDay(today, today, goal = 8_000, shownOn = today, celebrate = true)
+        assertTrue(viewModel.uiState.value.showCelebration)
+        assertEquals(listOf(today), marked)
+        viewModel.dismissCelebration()
+        assertFalse(viewModel.uiState.value.showCelebration)
+    }
+
+    @Test
+    fun skipsCelebrationOnAnotherDay() = runBlocking {
+        val today = LocalDate.of(2026, 10, 16)
+        val marked = mutableListOf<LocalDate>()
+        val viewModel = viewModel(
+            stepsOn = { 8_000L },
+            onMarkCelebration = { marked += it },
+        )
+        viewModel.loadSelectedDay(today.minusDays(1), today, goal = 8_000, celebrate = true)
+        assertFalse(viewModel.uiState.value.showCelebration)
+        assertTrue(marked.isEmpty())
+    }
+
+    @Test
     fun setDailyGoalDelegatesOnce() {
         val received = mutableListOf<Int>()
         val viewModel = viewModel(
@@ -60,6 +93,7 @@ class StepsViewModelTest {
     private fun viewModel(
         stepsOn: suspend (LocalDate) -> Long = { 0L },
         onSetDailyGoal: (Int) -> Unit = {},
+        onMarkCelebration: (LocalDate) -> Unit = {},
     ) = StepsViewModel(
         activityRecognitionGranted = MutableStateFlow(false),
         stepReadings = MutableStateFlow(StepReadingsState()),
@@ -68,5 +102,6 @@ class StepsViewModelTest {
         settings = flowOf(Settings()),
         stepsOnDay = stepsOn,
         onSetDailyGoal = onSetDailyGoal,
+        onMarkCelebration = onMarkCelebration,
     )
 }
