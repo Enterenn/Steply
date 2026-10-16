@@ -23,9 +23,10 @@ class DailyGoalTest {
     }
 
     @Test
-    fun snapsToFiveHundredStep() {
-        assertEquals(8_000, resolveDailyGoal(8_200))
-        assertEquals(8_500, resolveDailyGoal(8_300))
+    fun snapsToOneHundredStep() {
+        assertEquals(1_100, resolveDailyGoal(1_100))
+        assertEquals(1_200, resolveDailyGoal(1_249))
+        assertEquals(1_300, resolveDailyGoal(1_250))
     }
 
     @Test
