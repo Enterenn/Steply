@@ -3,7 +3,15 @@ package io.github.enterenn.steply.data.steps
 import io.github.enterenn.steply.data.db.AppDatabase
 import io.github.enterenn.steply.data.db.StepCounterReadingDao
 import io.github.enterenn.steply.data.db.StepCounterReadingEntity
-import io.github.enterenn.steply.data.steps.trendMonthBars as aggregateMonths
+import io.github.enterenn.steply.domain.StepReadStatus
+import io.github.enterenn.steply.domain.StepReading
+import io.github.enterenn.steply.domain.TrendDayBar
+import io.github.enterenn.steply.domain.TrendMonthBar
+import io.github.enterenn.steply.domain.compactReadings
+import io.github.enterenn.steply.domain.daySteps
+import io.github.enterenn.steply.domain.stepDelta
+import io.github.enterenn.steply.domain.trendDayBars
+import io.github.enterenn.steply.domain.trendMonthBars as aggregateMonths
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -27,12 +35,6 @@ data class StepCounterSnapshot(
     val deltaSteps: Long?,
     val counterReset: Boolean,
 )
-
-enum class StepReadStatus {
-    Idle,
-    SensorMissing,
-    TimedOut,
-}
 
 data class StepReadingsState(
     val snapshot: StepCounterSnapshot? = null,

@@ -6,6 +6,10 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import io.github.enterenn.steply.domain.DailyGoalChange
+import io.github.enterenn.steply.domain.DailyGoalHistory
+import io.github.enterenn.steply.domain.acceptsDailyGoalChange
+import io.github.enterenn.steply.domain.resolveDailyGoal
 import java.io.IOException
 import java.time.LocalDate
 import java.time.ZoneId

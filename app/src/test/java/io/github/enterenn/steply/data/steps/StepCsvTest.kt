@@ -1,5 +1,7 @@
 package io.github.enterenn.steply.data.steps
 
+import io.github.enterenn.steply.domain.StepReading
+import io.github.enterenn.steply.domain.daySteps
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
