@@ -8,21 +8,24 @@ import io.github.enterenn.steply.core.hasActivityRecognitionPermission
  * puis compaction des relevés stockés si l'appelant la demande. Ne recalcule rien.
  *
  * Le listener live, le debounce et la déduplication restent dans
- * [StepCounterRepository.startLiveUpdates]. Ce coordinateur sert seulement
- * les collectes déclenchées explicitement (worker périodique, retour au premier plan).
+ * [StepCounterRepository.startLiveUpdates]. Son callback renvoie le cumul ici.
+ * Après [recordReading] et [recordCumulative], l'objectif du jour est évalué.
  */
 class StepCollectionCoordinator(
     private val context: Context,
     private val repository: StepCounterRepository,
+    private val goalReachedNotifier: GoalReachedNotifier,
 ) {
     fun hasActivityRecognitionPermission(): Boolean = context.hasActivityRecognitionPermission()
 
     suspend fun recordReading() {
         repository.recordReading()
+        goalReachedNotifier.evaluate()
     }
 
     suspend fun recordCumulative(cumulativeSteps: Long) {
         repository.recordCumulative(cumulativeSteps)
+        goalReachedNotifier.evaluate()
     }
 
     suspend fun compactStoredReadings() {

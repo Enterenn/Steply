@@ -58,12 +58,12 @@ class StepCounterRepository(
     val state: StateFlow<StepReadingsState> = _state.asStateFlow()
     private var lastLiveCumulative: Long? = null
 
-    fun startLiveUpdates(scope: CoroutineScope) {
+    fun startLiveUpdates(scope: CoroutineScope, onCumulative: suspend (Long) -> Unit) {
         lastLiveCumulative = null
         reader.startListening { cumulative ->
             if (cumulative == lastLiveCumulative) return@startListening
             lastLiveCumulative = cumulative
-            scope.launch { recordCumulative(cumulative) }
+            scope.launch { onCumulative(cumulative) }
         }
     }
 

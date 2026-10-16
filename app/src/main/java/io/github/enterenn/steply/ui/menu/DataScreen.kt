@@ -144,6 +144,7 @@ fun DataScreen(container: AppContainer, onBack: () -> Unit) {
                 is StepCsvParse.Accepted -> {
                     fileFailed = false
                     problem = null
+                    container.goalReachedNotifier.evaluate()
                 }
                 is StepCsvParse.Rejected -> {
                     fileFailed = false
