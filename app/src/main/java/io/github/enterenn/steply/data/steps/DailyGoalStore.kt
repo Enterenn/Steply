@@ -11,15 +11,15 @@ import io.github.enterenn.steply.domain.DailyGoalHistory
 import io.github.enterenn.steply.domain.acceptsDailyGoalChange
 import io.github.enterenn.steply.domain.resolveDailyGoal
 import java.io.IOException
+import java.time.Clock
 import java.time.LocalDate
-import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 private val Context.dailyGoalDataStore by preferencesDataStore(name = "daily_goal")
 
-class DailyGoalStore(context: Context) {
+class DailyGoalStore(context: Context, private val clock: Clock) {
     private val dataStore = context.applicationContext.dailyGoalDataStore
 
     val goal: Flow<Int> = dataStore.data
@@ -49,7 +49,7 @@ class DailyGoalStore(context: Context) {
             if (preferences[StartKey] == null) {
                 preferences[StartKey] = current
             }
-            val today = LocalDate.now(ZoneId.systemDefault())
+            val today = LocalDate.now(clock)
             preferences[ChangesKey] = withChange(preferences[ChangesKey], today, resolved)
             preferences[GoalKey] = resolved
         }

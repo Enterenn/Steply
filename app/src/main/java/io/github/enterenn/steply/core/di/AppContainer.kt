@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import java.time.Clock
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
@@ -45,6 +46,7 @@ import kotlinx.coroutines.launch
 class AppContainer(context: Context) {
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val clock: Clock = Clock.systemDefaultZone()
 
     val database: AppDatabase by lazy {
         Room.databaseBuilder(appContext, AppDatabase::class.java, AppDatabase.NAME)
@@ -58,6 +60,7 @@ class AppContainer(context: Context) {
             reader = StepCounterReader(appContext),
             database = database,
             settings = settingsStore,
+            clock = clock,
         )
     }
 
@@ -69,7 +72,7 @@ class AppContainer(context: Context) {
         )
     }
 
-    private val dailyGoalStore: DailyGoalStore by lazy { DailyGoalStore(appContext) }
+    private val dailyGoalStore: DailyGoalStore by lazy { DailyGoalStore(appContext, clock) }
     val dailyGoal: Flow<Int>
         get() = dailyGoalStore.goal
 
@@ -78,7 +81,8 @@ class AppContainer(context: Context) {
 
     fun setDailyGoal(steps: Int) {
         scope.launch {
-            val walkedToday = stepCounterRepository.stepsOn(LocalDate.now())
+            val today = LocalDate.now(clock)
+            val walkedToday = stepCounterRepository.stepsOn(today)
             dailyGoalStore.setGoal(steps, walkedToday)
             goalReachedNotifier.evaluate()
         }
@@ -101,9 +105,13 @@ class AppContainer(context: Context) {
     }
 
     private val settingsStore: SettingsStore by lazy { SettingsStore(appContext) }
+    private val _language = MutableStateFlow(AppLanguage.System)
+    val language: StateFlow<AppLanguage> = _language.asStateFlow()
+    @Volatile private var userLanguageChange = false
+    val bootLanguageSuperseded: Boolean get() = userLanguageChange
     val goalReachedNotifier: GoalReachedNotifier by lazy {
         GoalReachedNotifier(
-            today = { LocalDate.now() },
+            today = { LocalDate.now(clock) },
             stepsOn = { day -> stepCounterRepository.stepsOn(day) },
             goal = { dailyGoalStore.goal.first() },
             settings = { settingsStore.snapshot() },
@@ -144,8 +152,11 @@ class AppContainer(context: Context) {
     }
 
     fun setLanguage(language: AppLanguage, onApplied: () -> Unit = {}) {
+        userLanguageChange = true
         scope.launch {
+            _language.value = language
             settingsStore.setLanguage(language)
+            _language.value = language
             withContext(Dispatchers.Main) { onApplied() }
         }
     }
@@ -168,6 +179,13 @@ class AppContainer(context: Context) {
 
     init {
         scope.launch { stepCounterRepository.refreshFromDatabase() }
+        scope.launch {
+            settingsStore.settings.collect { snapshot ->
+                if (!userLanguageChange || snapshot.language == _language.value) {
+                    _language.value = snapshot.language
+                }
+            }
+        }
         scope.launch {
             onboardingStore.complete.collect { done ->
                 if (done) _onboardingComplete.value = true

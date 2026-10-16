@@ -31,7 +31,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
 
 private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 
@@ -136,15 +135,6 @@ class SettingsStore(context: Context) {
     suspend fun setLastOptimization(instant: Instant) {
         dataStore.edit { it[LastOptimizationKey] = instant.toString() }
     }
-}
-
-fun Context.withStoredLanguage(): Context {
-    val language = try {
-        runBlocking { applicationContext.settingsDataStore.data.first() }.let(::settingsFrom).language
-    } catch (error: IOException) {
-        AppLanguage.System
-    }
-    return withLanguage(language)
 }
 
 fun Context.withLanguage(language: AppLanguage): Context {

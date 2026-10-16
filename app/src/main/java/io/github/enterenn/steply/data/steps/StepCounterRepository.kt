@@ -12,6 +12,7 @@ import io.github.enterenn.steply.domain.daySteps
 import io.github.enterenn.steply.domain.stepDelta
 import io.github.enterenn.steply.domain.trendDayBars
 import io.github.enterenn.steply.domain.trendMonthBars as aggregateMonths
+import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -47,11 +48,15 @@ class StepCounterRepository(
     private val reader: StepCounterReader,
     private val database: AppDatabase,
     private val settings: SettingsStore,
+    private val clock: Clock,
 ) {
     private val gate = Mutex()
     private val cacheLock = Mutex()
+    // Lectures : chargement unique, ajout seulement si déjà chargé, remplacement par storeReadings,
+    // purge = cache vide valide. Export et publishLatest hors cache.
     private val cachedReadings = mutableListOf<StepReading>()
     private var cacheLoaded = false
+    // Une seule valeur, chargée par publishLatest.
     private var lastOptimization: String? = null
     private var lastOptimizationLoaded = false
     private val _state = MutableStateFlow(StepReadingsState())
@@ -83,7 +88,7 @@ class StepCounterRepository(
 
     suspend fun trendBars(
         dayCount: Int,
-        today: LocalDate = LocalDate.now(),
+        today: LocalDate = LocalDate.now(clock),
         zone: ZoneId = ZoneId.systemDefault(),
     ): List<TrendDayBar> {
         val readings = readingsSnapshot()
@@ -91,7 +96,7 @@ class StepCounterRepository(
     }
 
     suspend fun trendMonthBars(
-        today: LocalDate = LocalDate.now(),
+        today: LocalDate = LocalDate.now(clock),
         zone: ZoneId = ZoneId.systemDefault(),
     ): List<TrendMonthBar> {
         val readings = readingsSnapshot()
@@ -119,9 +124,9 @@ class StepCounterRepository(
     suspend fun importCsv(content: String): StepCsvParse = gate.withLock {
         val parsed = parseStepCsv(content)
         if (parsed is StepCsvParse.Accepted) {
-            val now = Instant.now()
+            val now = clock.instant()
             val hardware = lastLiveCumulative ?: _state.value.snapshot?.cumulativeSteps
-            val zone = ZoneId.systemDefault().rules.getOffset(now).toStoredOffset()
+            val zone = clock.zone.rules.getOffset(now).toStoredOffset()
             storeReadings(anchorReadings(parsed.readings, hardware, now, zone))
             compactLocked()
         }
@@ -170,13 +175,13 @@ class StepCounterRepository(
     private suspend fun writeCumulative(cumulativeSteps: Long) {
         val latest = dao.latestTwo().firstOrNull()
         if (latest?.cumulativeSteps == cumulativeSteps) return
-        val now = Instant.now()
+        val now = clock.instant()
         val recordedAt = now.toString()
         dao.insert(
             StepCounterReadingEntity(
                 cumulativeSteps = cumulativeSteps,
                 recordedAt = recordedAt,
-                zoneOffset = ZoneId.systemDefault().rules.getOffset(now).toStoredOffset(),
+                zoneOffset = clock.zone.rules.getOffset(now).toStoredOffset(),
             ),
         )
         rememberReading(StepReading(cumulativeSteps, now))
@@ -204,8 +209,8 @@ class StepCounterRepository(
     private suspend fun compactLocked() {
         val stored = dao.allById()
         if (stored.size < 2) return
-        val now = Instant.now()
-        val zone = ZoneId.systemDefault()
+        val now = clock.instant()
+        val zone = clock.zone
         val projected = stored.map { StepReading(it.cumulativeSteps, Instant.parse(it.recordedAt)) }
         val compacted = compactReadings(projected, zone, now)
         if (compacted.size >= stored.size) return
