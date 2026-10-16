@@ -2,6 +2,7 @@ package io.github.enterenn.steply.core.di
 
 import android.content.Context
 import androidx.room.Room
+import io.github.enterenn.steply.core.AppLifecycleHandler
 import io.github.enterenn.steply.core.hasActivityRecognitionPermission
 import io.github.enterenn.steply.data.db.AppDatabase
 import io.github.enterenn.steply.data.db.MIGRATION_1_2
@@ -172,22 +173,25 @@ class AppContainer(context: Context) {
         }
     }
 
+    private val lifecycleHandler = AppLifecycleHandler(
+        hasPermission = { stepCollectionCoordinator.hasActivityRecognitionPermission() },
+        publishGranted = { granted -> _activityRecognitionGranted.value = granted },
+        stopLive = { stepCounterRepository.stopLiveUpdates() },
+        startLive = {
+            stepCounterRepository.startLiveUpdates(scope) { cumulative ->
+                stepCollectionCoordinator.recordCumulative(cumulative)
+            }
+        },
+        enqueue = { enqueueStepCounterWork(appContext) },
+        recordReading = { scope.launch { stepCollectionCoordinator.recordReading() } },
+        evaluate = { scope.launch { goalReachedNotifier.evaluate() } },
+    )
+
     fun onAppForeground() {
-        val granted = stepCollectionCoordinator.hasActivityRecognitionPermission()
-        _activityRecognitionGranted.value = granted
-        if (!granted) {
-            stepCounterRepository.stopLiveUpdates()
-            scope.launch { goalReachedNotifier.evaluate() }
-            return
-        }
-        enqueueStepCounterWork(appContext)
-        stepCounterRepository.startLiveUpdates(scope) { cumulative ->
-            stepCollectionCoordinator.recordCumulative(cumulative)
-        }
-        scope.launch { stepCollectionCoordinator.recordReading() }
+        lifecycleHandler.onForeground()
     }
 
     fun onAppBackground() {
-        stepCounterRepository.stopLiveUpdates()
+        lifecycleHandler.onBackground()
     }
 }
