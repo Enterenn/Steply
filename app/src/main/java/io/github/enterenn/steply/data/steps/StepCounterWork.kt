@@ -7,7 +7,6 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import io.github.enterenn.steply.SteplyApplication
-import io.github.enterenn.steply.core.hasActivityRecognitionPermission
 import java.util.concurrent.TimeUnit
 
 class StepCounterWorker(
@@ -15,11 +14,10 @@ class StepCounterWorker(
     params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        if (!applicationContext.hasActivityRecognitionPermission()) return Result.success()
-        val app = applicationContext as SteplyApplication
-        val repository = app.container.stepCounterRepository
-        repository.recordReading()
-        repository.compactStoredReadings()
+        val coordinator = (applicationContext as SteplyApplication).container.stepCollectionCoordinator
+        if (!coordinator.hasActivityRecognitionPermission()) return Result.success()
+        coordinator.recordReading()
+        coordinator.compactStoredReadings()
         return Result.success()
     }
 }
