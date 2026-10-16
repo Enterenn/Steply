@@ -5,7 +5,7 @@ import kotlin.math.roundToInt
 const val DailyGoalDefault = 8_000
 const val DailyGoalMin = 1_000
 const val DailyGoalMax = 30_000
-const val DailyGoalStep = 500
+const val DailyGoalStep = 100
 const val DailyGoalMajorEvery = 1_000
 
 /** Absent value stays at the default. Anything else snaps to the nearest step in range. */
