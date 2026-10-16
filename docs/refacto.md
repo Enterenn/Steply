@@ -224,7 +224,7 @@ Si un second source de pas apparaît : introduire alors `StepReadingSource` (int
 | Phase | Statut | Notes |
 | --- | --- | --- |
 | A — domain | Fait | Package `domain/` et frontière data |
-| B — coordinator | À faire | |
+| B — coordinator | Fait | `StepCollectionCoordinator` ; worker et premier plan |
 | C — notif objectif | À faire | Existant partiel dans AppContainer |
 | D — lifecycle | À faire | |
 | E — ViewModels | À faire | |

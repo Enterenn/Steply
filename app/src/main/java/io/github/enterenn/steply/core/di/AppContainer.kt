@@ -15,6 +15,7 @@ import io.github.enterenn.steply.domain.Profile
 import io.github.enterenn.steply.data.steps.ProfileStore
 import io.github.enterenn.steply.data.steps.Settings
 import io.github.enterenn.steply.data.steps.SettingsStore
+import io.github.enterenn.steply.data.steps.StepCollectionCoordinator
 import io.github.enterenn.steply.data.steps.StepCounterReader
 import io.github.enterenn.steply.data.steps.StepCounterRepository
 import io.github.enterenn.steply.data.steps.StepReadingsState
@@ -55,6 +56,13 @@ class AppContainer(context: Context) {
             reader = StepCounterReader(appContext),
             database = database,
             settings = settingsStore,
+        )
+    }
+
+    val stepCollectionCoordinator: StepCollectionCoordinator by lazy {
+        StepCollectionCoordinator(
+            context = appContext,
+            repository = stepCounterRepository,
         )
     }
 
@@ -177,7 +185,7 @@ class AppContainer(context: Context) {
     }
 
     fun onAppForeground() {
-        val granted = appContext.hasActivityRecognitionPermission()
+        val granted = stepCollectionCoordinator.hasActivityRecognitionPermission()
         _activityRecognitionGranted.value = granted
         if (!granted) {
             stepCounterRepository.stopLiveUpdates()
@@ -185,7 +193,7 @@ class AppContainer(context: Context) {
         }
         enqueueStepCounterWork(appContext)
         stepCounterRepository.startLiveUpdates(scope)
-        scope.launch { stepCounterRepository.recordReading() }
+        scope.launch { stepCollectionCoordinator.recordReading() }
     }
 
     fun onAppBackground() {
