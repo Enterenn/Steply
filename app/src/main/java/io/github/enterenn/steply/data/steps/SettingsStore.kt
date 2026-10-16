@@ -16,13 +16,17 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import io.github.enterenn.steply.R
+import io.github.enterenn.steply.domain.AppLanguage
+import io.github.enterenn.steply.domain.DistanceUnit
+import io.github.enterenn.steply.domain.HeightUnit
+import io.github.enterenn.steply.domain.ThemeMode
+import io.github.enterenn.steply.domain.WeightUnit
 import io.github.enterenn.steply.ui.theme.AccentPreset
 import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.util.Locale
-import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -41,17 +45,8 @@ private val LanguageKey = stringPreferencesKey("language")
 private val GoalNotifiedOnKey = stringPreferencesKey("goal_notified_on")
 private val LastOptimizationKey = stringPreferencesKey("last_optimization")
 
-private const val KilometersPerMile = 1.609344
-private const val PoundsPerKilogram = 2.2046226218
-private const val CentimetersPerInch = 2.54
 private const val GoalChannelId = "goal"
 private const val GoalNoticeId = 1
-
-enum class DistanceUnit { Km, Mi }
-enum class WeightUnit { Kg, Lb }
-enum class HeightUnit { Cm, In }
-enum class ThemeMode { System, Light, Dark }
-enum class AppLanguage { System, English, French }
 
 data class Settings(
     val distance: DistanceUnit = DistanceUnit.Km,
@@ -63,20 +58,6 @@ data class Settings(
     val language: AppLanguage = AppLanguage.System,
     val goalNotifiedOn: LocalDate? = null,
 )
-
-fun kmToMi(kilometers: Double): Double = kilometers / KilometersPerMile
-
-fun kgToLb(kg: Int): Int = (kg * PoundsPerKilogram).roundToInt()
-    .coerceIn(kgToLbRaw(ProfileWeightMinKg), kgToLbRaw(ProfileWeightMaxKg))
-
-fun lbToKg(lb: Int): Int = (lb / PoundsPerKilogram).roundToInt()
-    .coerceIn(ProfileWeightMinKg, ProfileWeightMaxKg)
-
-fun cmToIn(cm: Int): Int = (cm / CentimetersPerInch).roundToInt()
-    .coerceIn(cmToInRaw(ProfileHeightMinCm), cmToInRaw(ProfileHeightMaxCm))
-
-fun inchesToCm(inches: Int): Int = (inches * CentimetersPerInch).roundToInt()
-    .coerceIn(ProfileHeightMinCm, ProfileHeightMaxCm)
 
 class SettingsStore(context: Context) {
     private val dataStore = context.applicationContext.settingsDataStore
@@ -207,10 +188,6 @@ fun postGoalNotice(context: Context, language: AppLanguage): Boolean {
     manager.notify(GoalNoticeId, notification)
     return true
 }
-
-private fun kgToLbRaw(kg: Int): Int = (kg * PoundsPerKilogram).roundToInt()
-
-private fun cmToInRaw(cm: Int): Int = (cm / CentimetersPerInch).roundToInt()
 
 private fun settingsFrom(preferences: Preferences): Settings {
     val accent = preferences[AccentKey]?.let { name ->

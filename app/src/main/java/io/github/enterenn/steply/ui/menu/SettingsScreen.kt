@@ -60,12 +60,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
-import io.github.enterenn.steply.data.steps.AppLanguage
-import io.github.enterenn.steply.data.steps.DistanceUnit
-import io.github.enterenn.steply.data.steps.HeightUnit
+import io.github.enterenn.steply.domain.AppLanguage
+import io.github.enterenn.steply.domain.DistanceUnit
+import io.github.enterenn.steply.domain.HeightUnit
 import io.github.enterenn.steply.data.steps.Settings
-import io.github.enterenn.steply.data.steps.ThemeMode
-import io.github.enterenn.steply.data.steps.WeightUnit
+import io.github.enterenn.steply.domain.ThemeMode
+import io.github.enterenn.steply.domain.WeightUnit
 import io.github.enterenn.steply.ui.components.SteplyCard
 import io.github.enterenn.steply.ui.components.SteplySegmentedControl
 import io.github.enterenn.steply.ui.components.SteplySwitch

@@ -1,4 +1,4 @@
-package io.github.enterenn.steply.data.steps
+package io.github.enterenn.steply.domain
 
 const val ProfileNameMaxLength = 40
 const val ProfileWeightMinKg = 30

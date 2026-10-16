@@ -13,8 +13,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.data.steps.Settings
-import io.github.enterenn.steply.data.steps.ThemeMode
 import io.github.enterenn.steply.data.steps.withStoredLanguage
+import io.github.enterenn.steply.domain.ThemeMode
 import io.github.enterenn.steply.ui.SteplyApp
 import io.github.enterenn.steply.ui.theme.SteplyTheme
 

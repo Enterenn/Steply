@@ -52,7 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
-import io.github.enterenn.steply.data.steps.DailyGoalDefault
+import io.github.enterenn.steply.domain.DailyGoalDefault
 import io.github.enterenn.steply.ui.menu.AboutScreen
 import io.github.enterenn.steply.ui.menu.DataScreen
 import io.github.enterenn.steply.ui.menu.HelpScreen

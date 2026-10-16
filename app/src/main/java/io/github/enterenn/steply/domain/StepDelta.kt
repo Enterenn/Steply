@@ -1,4 +1,4 @@
-package io.github.enterenn.steply.data.steps
+package io.github.enterenn.steply.domain
 
 data class StepDelta(val steps: Long, val counterReset: Boolean)
 
