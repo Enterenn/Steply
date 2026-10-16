@@ -21,9 +21,9 @@ import io.github.enterenn.steply.data.steps.StepCounterRepository
 import io.github.enterenn.steply.data.steps.StepReadingsState
 import io.github.enterenn.steply.domain.ThemeMode
 import io.github.enterenn.steply.domain.WeightUnit
-import io.github.enterenn.steply.data.steps.canPostGoalNotice
+import io.github.enterenn.steply.data.steps.AndroidGoalNoticePoster
+import io.github.enterenn.steply.data.steps.GoalReachedNotifier
 import io.github.enterenn.steply.data.steps.enqueueStepCounterWork
-import io.github.enterenn.steply.data.steps.postGoalNotice
 import io.github.enterenn.steply.ui.theme.AccentPreset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,9 +32,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -63,6 +61,7 @@ class AppContainer(context: Context) {
         StepCollectionCoordinator(
             context = appContext,
             repository = stepCounterRepository,
+            goalReachedNotifier = goalReachedNotifier,
         )
     }
 
@@ -77,6 +76,7 @@ class AppContainer(context: Context) {
         scope.launch {
             val walkedToday = stepCounterRepository.stepsOn(LocalDate.now())
             dailyGoalStore.setGoal(steps, walkedToday)
+            goalReachedNotifier.evaluate()
         }
     }
 
@@ -97,7 +97,16 @@ class AppContainer(context: Context) {
     }
 
     private val settingsStore: SettingsStore by lazy { SettingsStore(appContext) }
-    private val goalNotice = Mutex()
+    val goalReachedNotifier: GoalReachedNotifier by lazy {
+        GoalReachedNotifier(
+            today = { LocalDate.now() },
+            stepsOn = { day -> stepCounterRepository.stepsOn(day) },
+            goal = { dailyGoalStore.goal.first() },
+            settings = { settingsStore.snapshot() },
+            markNotified = { day -> settingsStore.setGoalNotifiedOn(day) },
+            poster = AndroidGoalNoticePoster(appContext),
+        )
+    }
     val settings: Flow<Settings>
         get() = settingsStore.settings
 
@@ -116,7 +125,10 @@ class AppContainer(context: Context) {
     }
 
     fun setGoalNotifications(enabled: Boolean) {
-        scope.launch { settingsStore.setGoalNotifications(enabled) }
+        scope.launch {
+            settingsStore.setGoalNotifications(enabled)
+            if (enabled) goalReachedNotifier.evaluate()
+        }
     }
 
     fun setThemeMode(mode: ThemeMode) {
@@ -158,30 +170,6 @@ class AppContainer(context: Context) {
                 else if (_onboardingComplete.value != true) _onboardingComplete.value = false
             }
         }
-        scope.launch {
-            combine(
-                settingsStore.settings,
-                dailyGoalStore.goal,
-                stepCounterRepository.state,
-            ) { settings, goal, _ -> settings to goal }
-                .collect { (settings, goal) -> considerGoalNotice(settings, goal) }
-        }
-    }
-
-    private suspend fun considerGoalNotice(settings: Settings, goal: Int) {
-        if (!settings.goalNotifications) return
-        val today = LocalDate.now()
-        if (settings.goalNotifiedOn == today) return
-        if (!canPostGoalNotice(appContext)) return
-        goalNotice.withLock {
-            val day = LocalDate.now()
-            val steps = stepCounterRepository.stepsOn(day)
-            if (steps < goal.toLong()) return@withLock
-            val fresh = settingsStore.snapshot()
-            if (!fresh.goalNotifications || fresh.goalNotifiedOn == day) return@withLock
-            if (!canPostGoalNotice(appContext)) return@withLock
-            if (postGoalNotice(appContext, fresh.language)) settingsStore.setGoalNotifiedOn(day)
-        }
     }
 
     fun onAppForeground() {
@@ -189,10 +177,13 @@ class AppContainer(context: Context) {
         _activityRecognitionGranted.value = granted
         if (!granted) {
             stepCounterRepository.stopLiveUpdates()
+            scope.launch { goalReachedNotifier.evaluate() }
             return
         }
         enqueueStepCounterWork(appContext)
-        stepCounterRepository.startLiveUpdates(scope)
+        stepCounterRepository.startLiveUpdates(scope) { cumulative ->
+            stepCollectionCoordinator.recordCumulative(cumulative)
+        }
         scope.launch { stepCollectionCoordinator.recordReading() }
     }
 

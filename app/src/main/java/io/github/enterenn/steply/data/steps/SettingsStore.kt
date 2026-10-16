@@ -189,6 +189,11 @@ fun postGoalNotice(context: Context, language: AppLanguage): Boolean {
     return true
 }
 
+class AndroidGoalNoticePoster(private val context: Context) : GoalNoticePoster {
+    override fun canPost(): Boolean = canPostGoalNotice(context)
+    override fun post(language: AppLanguage): Boolean = postGoalNotice(context, language)
+}
+
 private fun settingsFrom(preferences: Preferences): Settings {
     val accent = preferences[AccentKey]?.let { name ->
         AccentPreset.entries.firstOrNull { it.name == name }
