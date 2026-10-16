@@ -36,6 +36,7 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PathFillType
@@ -67,12 +68,12 @@ import io.github.enterenn.steply.ui.theme.SteplyTheme
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-private val RingStroke = 24.dp
+internal val RingStroke = 24.dp
 private val RingMinDiameter = 240.dp
 private val RingMaxDiameter = 300.dp
 private const val RingWidthFactor = 0.80f
-private const val RingStartAngle = -90f
-private const val RingFullSweep = 360f
+internal const val RingStartAngle = -90f
+internal const val RingFullSweep = 360f
 private val RingIconSize = 20.sp
 private val RingLabelSize = 16.sp
 private val RingLabelLineHeight = 18.sp
@@ -106,11 +107,18 @@ fun SteplyProgressRing(
     goal: Int,
     contentDescription: String,
     modifier: Modifier = Modifier,
+    celebrating: Boolean = false,
+    onCelebrationFinished: () -> Unit = {},
 ) {
     val colors = SteplyTheme.colors
     val spacing = SteplyTheme.spacing
     val spokenLabel = contentDescription
     val stepMotion = rememberStepMotion(value, valueText, goal)
+    val celebration = rememberGoalCelebration(celebrating, onCelebrationFinished)
+    val celebrationStart = remember(celebrating) {
+        if (!celebrating || goal <= 0) 0f else (value.toFloat() / goal.toFloat()).coerceIn(0f, 1f)
+    }
+    val arcFraction = if (celebrating) celebration.arcFraction(celebrationStart) else null
     BoxWithConstraints(
         modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center,
@@ -131,7 +139,26 @@ fun SteplyProgressRing(
                     }
                 },
         ) {
-            RingArc(stepMotion, colors.lightGray, colors.accent)
+            if (celebrating) {
+                GoalRingCelebrationLayers(
+                    playback = celebration,
+                    accent = colors.accent,
+                    muted = lerp(colors.accent, colors.lightGray, 0.45f),
+                    sparkle = colors.text,
+                )
+            }
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .graphicsLayer {
+                        if (!celebrating) return@graphicsLayer
+                        val scale = celebration.scale()
+                        scaleX = scale
+                        scaleY = scale
+                    },
+            ) {
+            RingArc(stepMotion, colors.lightGray, colors.accent, arcFraction)
+            if (celebrating) GoalRingShimmer(celebration.shimmer(), colors.accent)
             ScaleDown(
                 Modifier
                     .fillMaxSize()
@@ -187,6 +214,7 @@ fun SteplyProgressRing(
                     )
                 }
             }
+            }
         }
     }
 }
@@ -229,8 +257,13 @@ private fun rememberStepMotion(value: Int, text: String, goal: Int): StepMotion 
 }
 
 @Composable
-private fun BoxScope.RingArc(motion: StepMotion, trackColor: Color, arcColor: Color) {
-    val fraction = motion.displayedFraction()
+private fun BoxScope.RingArc(
+    motion: StepMotion,
+    trackColor: Color,
+    arcColor: Color,
+    fractionOverride: Float? = null,
+) {
+    val fraction = fractionOverride ?: motion.displayedFraction()
     Canvas(Modifier.matchParentSize()) {
         val stroke = RingStroke.toPx()
         val center = Offset(size.width / 2f, size.height / 2f)
@@ -332,7 +365,7 @@ private fun TickDigit(
 }
 
 @Composable
-private fun motionEnabled(): Boolean {
+internal fun motionEnabled(): Boolean {
     val context = LocalContext.current
     val scale = Settings.Global.getFloat(
         context.contentResolver,

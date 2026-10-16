@@ -112,6 +112,7 @@ fun StepsScreen(
     }
 
     val week = remember { currentWeek() }
+    val today = week[todayIndex()].date
     var selectedDay by rememberSaveable(key = "steps-week-day") { mutableIntStateOf(todayIndex()) }
     val selectedDate = week[selectedDay].date
     val readings = state.readings
@@ -121,8 +122,14 @@ fun StepsScreen(
     LaunchedEffect(Unit) {
         viewModel.observeInputs()
     }
-    LaunchedEffect(selectedDate, readings) {
-        viewModel.loadSelectedDay(selectedDate)
+    LaunchedEffect(selectedDate, readings, goal, state.settingsReady, state.celebrationShownOn) {
+        viewModel.loadSelectedDay(
+            date = selectedDate,
+            today = today,
+            goal = goal,
+            shownOn = state.celebrationShownOn,
+            celebrate = state.settingsReady,
+        )
     }
     LaunchedEffect(readings) {
         viewModel.loadWeek(week.map { day -> day.date })
@@ -154,6 +161,8 @@ fun StepsScreen(
                 status = readings.status,
                 hasSnapshot = readings.snapshot != null,
             ),
+            celebrating = state.showCelebration,
+            onCelebrationFinished = viewModel::dismissCelebration,
             onEditGoal = onEditGoal,
         )
         DerivedStatsCard(
@@ -233,6 +242,8 @@ private fun StepsProgressCard(
     steps: Long,
     goal: Int,
     health: CollectionHealth,
+    celebrating: Boolean,
+    onCelebrationFinished: () -> Unit,
     onEditGoal: () -> Unit,
 ) {
     val stepsText = formatStepCount(steps)
@@ -252,6 +263,8 @@ private fun StepsProgressCard(
                 stepsText,
                 goalText,
             ),
+            celebrating = celebrating,
+            onCelebrationFinished = onCelebrationFinished,
         )
         Box(
             Modifier
