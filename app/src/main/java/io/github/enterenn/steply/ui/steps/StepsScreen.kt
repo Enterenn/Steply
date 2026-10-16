@@ -41,7 +41,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -70,18 +69,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.enterenn.steply.R
-import io.github.enterenn.steply.core.di.AppContainer
 import io.github.enterenn.steply.domain.CollectionHealth
-import io.github.enterenn.steply.domain.DailyGoalDefault
 import io.github.enterenn.steply.domain.collectionHealth
 import io.github.enterenn.steply.domain.daysReachingGoal
 import io.github.enterenn.steply.domain.DistanceUnit
-import io.github.enterenn.steply.data.steps.Settings as SteplySettings
 import io.github.enterenn.steply.domain.derivedActivity
 import io.github.enterenn.steply.domain.kmToMi
-import io.github.enterenn.steply.domain.Profile
 import io.github.enterenn.steply.domain.DailyGoalMax
 import io.github.enterenn.steply.domain.DailyGoalMin
 import io.github.enterenn.steply.domain.acceptsDailyGoalChange
@@ -99,29 +96,36 @@ import java.util.Locale
 import kotlin.math.roundToLong
 
 @Composable
-fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
+fun StepsScreen(
+    viewModelFactory: ViewModelProvider.Factory,
+    onEditGoal: () -> Unit,
+    onActivityPermissionResult: () -> Unit,
+) {
+    val viewModel: StepsViewModel = viewModel(factory = viewModelFactory)
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val granted by container.activityRecognitionGranted.collectAsState()
+    val granted = state.activityRecognitionGranted
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { _ ->
-        container.onAppForeground()
+        onActivityPermissionResult()
     }
 
     val week = remember { currentWeek() }
     var selectedDay by rememberSaveable(key = "steps-week-day") { mutableIntStateOf(todayIndex()) }
     val selectedDate = week[selectedDay].date
-    val readings by container.stepReadings.collectAsState()
-    val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
-    val profile by container.profile.collectAsState(initial = Profile())
-    val settings by container.settings.collectAsState(initial = SteplySettings())
-    var steps by remember { mutableLongStateOf(0L) }
-    var weekSteps by remember { mutableStateOf(List(week.size) { 0L }) }
+    val readings = state.readings
+    val goal = state.goal
+    val steps = state.steps
+    val weekSteps = state.weekSteps
+    LaunchedEffect(Unit) {
+        viewModel.observeInputs()
+    }
     LaunchedEffect(selectedDate, readings) {
-        steps = container.stepCounterRepository.stepsOn(selectedDate)
+        viewModel.loadSelectedDay(selectedDate)
     }
     LaunchedEffect(readings) {
-        weekSteps = week.map { day -> container.stepCounterRepository.stepsOn(day.date) }
+        viewModel.loadWeek(week.map { day -> day.date })
     }
     val spacing = SteplyTheme.spacing
     Column(
@@ -154,9 +158,9 @@ fun StepsScreen(container: AppContainer, onEditGoal: () -> Unit) {
         )
         DerivedStatsCard(
             steps,
-            profile.heightCm,
-            profile.weightKg,
-            miles = settings.distance == DistanceUnit.Mi,
+            state.heightCm,
+            state.weightKg,
+            miles = state.distance == DistanceUnit.Mi,
         )
         if (!granted) {
             PermissionDeniedContent(

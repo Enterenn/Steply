@@ -1,6 +1,8 @@
 package io.github.enterenn.steply.core.di
 
 import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
 import io.github.enterenn.steply.core.AppLifecycleHandler
 import io.github.enterenn.steply.core.hasActivityRecognitionPermission
@@ -25,6 +27,7 @@ import io.github.enterenn.steply.domain.WeightUnit
 import io.github.enterenn.steply.data.steps.AndroidGoalNoticePoster
 import io.github.enterenn.steply.data.steps.GoalReachedNotifier
 import io.github.enterenn.steply.data.steps.enqueueStepCounterWork
+import io.github.enterenn.steply.ui.steps.StepsViewModel
 import io.github.enterenn.steply.ui.theme.AccentPreset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -193,5 +196,18 @@ class AppContainer(context: Context) {
 
     fun onAppBackground() {
         lifecycleHandler.onBackground()
+    }
+
+    val stepsViewModelFactory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = StepsViewModel(
+            activityRecognitionGranted = activityRecognitionGranted,
+            stepReadings = stepReadings,
+            dailyGoal = dailyGoal,
+            profile = profile,
+            settings = settings,
+            stepsOnDay = { day -> stepCounterRepository.stepsOn(day) },
+            onSetDailyGoal = this@AppContainer::setDailyGoal,
+        ) as T
     }
 }

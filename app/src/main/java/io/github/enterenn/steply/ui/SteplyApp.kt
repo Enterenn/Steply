@@ -50,9 +50,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.enterenn.steply.R
 import io.github.enterenn.steply.core.di.AppContainer
-import io.github.enterenn.steply.domain.DailyGoalDefault
 import io.github.enterenn.steply.ui.menu.AboutScreen
 import io.github.enterenn.steply.ui.menu.DataScreen
 import io.github.enterenn.steply.ui.menu.HelpScreen
@@ -62,6 +63,7 @@ import io.github.enterenn.steply.ui.menu.SettingsScreen
 import io.github.enterenn.steply.ui.onboarding.OnboardingScreen
 import io.github.enterenn.steply.ui.steps.GoalEditorSheet
 import io.github.enterenn.steply.ui.steps.StepsScreen
+import io.github.enterenn.steply.ui.steps.StepsViewModel
 import io.github.enterenn.steply.ui.components.pressBounce
 import io.github.enterenn.steply.ui.theme.SteplyTheme
 import io.github.enterenn.steply.ui.trends.TrendsScreen
@@ -90,16 +92,6 @@ fun SteplyApp(container: AppContainer) {
     var selected by rememberSaveable { mutableStateOf(Tab.Steps) }
     var menuDestination by rememberSaveable { mutableStateOf(MenuDestination.Menu) }
     var editingGoal by rememberSaveable { mutableStateOf(false) }
-    val goal by container.dailyGoal.collectAsState(initial = DailyGoalDefault)
-    val readings by container.stepReadings.collectAsState()
-    var stepsToday by remember { mutableLongStateOf(Long.MAX_VALUE) }
-    LaunchedEffect(editingGoal, readings) {
-        stepsToday = if (editingGoal) {
-            container.stepCounterRepository.stepsOn(LocalDate.now())
-        } else {
-            Long.MAX_VALUE
-        }
-    }
     val colors = SteplyTheme.colors
 
     Box(Modifier.fillMaxSize()) {
@@ -119,7 +111,11 @@ fun SteplyApp(container: AppContainer) {
                 if (onboardingComplete != true) {
                     if (onboardingComplete == false) OnboardingScreen(container)
                 } else when (selected) {
-                    Tab.Steps -> StepsScreen(container, onEditGoal = { editingGoal = true })
+                    Tab.Steps -> StepsScreen(
+                        viewModelFactory = container.stepsViewModelFactory,
+                        onEditGoal = { editingGoal = true },
+                        onActivityPermissionResult = { container.onAppForeground() },
+                    )
                     Tab.Trends -> TrendsScreen(container)
                     Tab.Menu -> when (menuDestination) {
                         MenuDestination.About -> AboutScreen(onBack = {
@@ -158,11 +154,21 @@ fun SteplyApp(container: AppContainer) {
             }
         }
         if (onboardingComplete == true && editingGoal) {
+            val stepsViewModel: StepsViewModel = viewModel(factory = container.stepsViewModelFactory)
+            val stepsState by stepsViewModel.uiState.collectAsStateWithLifecycle()
+            var stepsToday by remember { mutableLongStateOf(Long.MAX_VALUE) }
+            LaunchedEffect(editingGoal, stepsState.readings) {
+                stepsToday = if (editingGoal) {
+                    stepsViewModel.stepsOn(LocalDate.now())
+                } else {
+                    Long.MAX_VALUE
+                }
+            }
             GoalEditorSheet(
-                goal = goal,
+                goal = stepsState.goal,
                 stepsToday = stepsToday,
                 onSave = { value ->
-                    container.setDailyGoal(value)
+                    stepsViewModel.setDailyGoal(value)
                     editingGoal = false
                 },
                 onDismiss = { editingGoal = false },
